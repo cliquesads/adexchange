@@ -1,7 +1,7 @@
 {
-  "name": "node-js-getting-started",
+  "name": "cliquesexchange",
   "version": "0.1.2",
-  "description": "A sample Node.js app using Express 4",
+  "description": "Cliques ad exchange",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
@@ -15,7 +15,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/heroku/node-js-getting-started"
+    "url": "https://github.com/cliquesexchange.git"
   },
   "keywords": [
     "node",
