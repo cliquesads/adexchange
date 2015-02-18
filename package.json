@@ -7,8 +7,13 @@
     "start": "node index.js"
   },
   "dependencies": {
+    "async": "^0.9.0",
+    "cool-ascii-faces": "~1.3.x",
     "express": "~4.9.x",
-    "cool-ascii-faces": "~1.3.x"
+    "mathjs": "^1.3.0",
+    "mongodb": "~1.4.x",
+    "mongoose": "~3.8.x",
+    "request": "^2.53.0"
   },
   "engines": {
     "node": "0.10.x"
