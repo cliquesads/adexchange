@@ -1,0 +1,33 @@
+doctype html
+html(lang="en")
+    head
+        title="Cliques RTB Test"
+    body
+        h1 Cliques RTB Test
+        p.
+            Below you should see an ad that was purchase through an auction that occurred as
+            soon as this page was loaded.
+        p.
+            10 remote bidders were called at load time, and the winning ad will render below, if it hasn't already.
+        #ad.col
+            script(type='text/javascript').
+                var xhr = new XMLHttpRequest();
+                xhr.open('GET','/exchange/test_auction', true);
+                xhr.onload = function (e) {
+                    if (xhr.readyState === 4) {
+                        if (xhr.status === 200) {
+                            var response_data;
+                            response_data = JSON.parse(xhr.responseText);
+                            document.getElementById('ad').innerHTML += response_data.adm;
+                            delete response_data.adm;
+                            document.getElementById('addata').innerHTML += JSON.stringify(response_data, null, 2);
+                        } else {
+                            console.error(xhr.statusText);
+                        }
+                    }
+                };
+                xhr.onerror = function (e) {
+                    console.error(xhr.statusText);
+                };
+                xhr.send(null);
+        pre#addata.

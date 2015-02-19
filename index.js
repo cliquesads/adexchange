@@ -1,8 +1,8 @@
 var express = require('express');
-var fs = require('fs');
 var br = require('./lib/bid_requests');
 var querystring = require('querystring');
 var app = express();
+var jade = require('jade');
 
 app.set('port', (process.env.PORT || 5100));
 app.use(express.static(__dirname + '/public'));
@@ -38,4 +38,10 @@ app.get('/exchange/test_auction', function(request, response){
             response.status(200).json(winning_bid)
         });
     });
+});
+
+app.get('/rtb_test', function(request, response){
+    var fn = jade.compileFile('./templates/rtb_test.jade', null);
+    var html = fn();
+    response.send(html);
 });
