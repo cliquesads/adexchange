@@ -8,7 +8,8 @@ html(lang="en")
             Below you should see an ad that was purchase through an auction that occurred as
             soon as this page was loaded.
         p.
-            10 remote bidders were called at load time, and the winning ad will render below, if it hasn't already.
+            10 remote bidders were called at load time, and the winning ad will render below, if it hasn't already.<br/>
+            Note that the price, clear price and other identifiers change with each page load. Real time bidding!
         #ad.col
             script(type='text/javascript').
                 var xhr = new XMLHttpRequest();
@@ -30,4 +31,5 @@ html(lang="en")
                     console.error(xhr.statusText);
                 };
                 xhr.send(null);
-        pre#addata.
+        pre#addata.col
+                h3 OpenRTB-Compliant JSON Bid Response Data: <br/>
