@@ -4,7 +4,6 @@ var br = require('./lib/bid_requests');
 var querystring = require('querystring');
 var app = express();
 
-
 app.set('port', (process.env.PORT || 5100));
 app.use(express.static(__dirname + '/public'));
 
@@ -18,11 +17,10 @@ app.listen(app.get('port'), function() {
 
 function generate_test_bid_urls(num_urls){
     // temporary function to generate bunch of test bid URLs
-    var base_url = "http://104.154.59.193:5000/bid?";
+    var base_url = "http://localhost:5000/bid?";
     var urls = [];
     for (var i = 0; i < num_urls; i++) {
         var query = {
-            "request_id": Math.round(Math.random() * 10e7),
             "bidder_id": Math.round(Math.random() * 10e2)
         };
         urls.push(base_url + querystring.encode(query));
@@ -41,7 +39,3 @@ app.get('/exchange/test_auction', function(request, response){
         });
     });
 });
-
-
-
-
