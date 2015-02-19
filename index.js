@@ -37,7 +37,7 @@ app.get('/exchange/test_auction', function(request, response){
     br.get_bids(bid_urls, function(err, result){
         if (err) throw err;
         winning_bid = br.run_auction(result, function(err, winning_bid){
-            response.status(200).json(winning_bid).send('<')
+            response.status(200).json(winning_bid)
         });
     });
 });
