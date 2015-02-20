@@ -1,21 +1,23 @@
 # Cliques Exchange
 
-A Node.js app using [Express 4](http://expressjs.com/).
+The Cliques Ad Exchange, a Node.js app using [Express 4](http://expressjs.com/).
 
-This application support the [Getting Started with Node on Heroku](https://devcenter.heroku.com/articles/getting-started-with-nodejs) article - check it out.
+Handles incoming requests for impressions, runs real-time auctions from remote bidders, and responds with the winning bidder's ad markup.
+
+All requests and responses follow [OpenRTB 2.3](https://github.com/openrtb/OpenRTB) protocols.
 
 ## Running Locally
 
-Make sure you have [Node.js](http://nodejs.org/) and the [Heroku Toolbelt](https://toolbelt.heroku.com/) installed.
+First, make sure you have [Node.js](http://nodejs.org/) installed.
 
 ```sh
-$ git clone git@github.com:heroku/node-js-getting-started.git # or clone your own fork
-$ cd node-js-getting-started
+$ git clone git@github.com:cliquesads/adexchange.git # or clone your own fork
+$ cd adexchange
 $ npm install
-$ npm start
+$ node index.js
 ```
 
-Your app should now be running on [localhost:5000](http://localhost:5000/).
+Your app should now be running on [localhost:5100](http://localhost:5100/).
 
 ## Deploying to Heroku
 
