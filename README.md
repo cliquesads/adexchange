@@ -1,6 +1,6 @@
-# node-js-getting-started
+# Cliques Exchange
 
-A barebones Node.js app using [Express 4](http://expressjs.com/).
+A Node.js app using [Express 4](http://expressjs.com/).
 
 This application support the [Getting Started with Node on Heroku](https://devcenter.heroku.com/articles/getting-started-with-nodejs) article - check it out.
 
