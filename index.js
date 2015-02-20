@@ -7,10 +7,11 @@ var app = express();
 
 //TODO: Cookie handling, logging, win-notifications,
 //TODO: Update README.md, invocation-tags (client-side shit),
+//TODO: Use cluster module to improve load-handling (http://nodejs.org/docs/latest/api/cluster.html)
 
 // inside request-ip middleware handler
 app.use(function(req, res, next) {
-    req.clientIp = requestIp.getClientIp(req); // on loaclhost > 127.0.0.1
+    req.clientIp = requestIp.getClientIp(req); // on localhost > 127.0.0.1
     next();
 });
 
