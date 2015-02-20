@@ -13,7 +13,7 @@ html(lang="en")
         #ad.col
             script(type='text/javascript').
                 var xhr = new XMLHttpRequest();
-                xhr.open('GET','/exchange/test_auction', true);
+                xhr.open('GET','/exchange/test_auction?h=250&w=300&pos=0', true);
                 xhr.onload = function (e) {
                     if (xhr.readyState === 4) {
                         if (xhr.status === 200) {
