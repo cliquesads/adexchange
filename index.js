@@ -1,8 +1,15 @@
 var express = require('express');
 var br = require('./lib/bid_requests');
 var querystring = require('querystring');
-var app = express();
 var jade = require('jade');
+var requestIp = require('request-ip');
+var app = express();
+
+// inside request-ip middleware handler
+app.use(function(req, res, next) {
+    req.clientIp = requestIp.getClientIp(req); // on loaclhost > 127.0.0.1
+    next();
+});
 
 app.set('port', (process.env.PORT || 5100));
 app.use(express.static(__dirname + '/public'));
@@ -30,9 +37,10 @@ function generate_test_bid_urls(num_urls){
 
 app.get('/exchange/test_auction', function(request, response){
     // Test runs & vars
+    //TODO: Add some logic here to figure out how bid urls are retrieved
     var bid_urls = generate_test_bid_urls(10);
     var winning_bid = {};
-    br.get_bids(bid_urls, function(err, result){
+    br.get_bids(bid_urls, request, function(err, result){
         if (err) throw err;
         winning_bid = br.run_auction(result, function(err, winning_bid){
             response.status(200).json(winning_bid)
