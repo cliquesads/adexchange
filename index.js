@@ -5,6 +5,9 @@ var jade = require('jade');
 var requestIp = require('request-ip');
 var app = express();
 
+//TODO: Cookie handling, logging, win-notifications,
+//TODO: Update README.md, invocation-tags (client-side shit),
+
 // inside request-ip middleware handler
 app.use(function(req, res, next) {
     req.clientIp = requestIp.getClientIp(req); // on loaclhost > 127.0.0.1
