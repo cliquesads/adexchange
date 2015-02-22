@@ -28,11 +28,12 @@ app.listen(app.get('port'), function() {
 
 function generate_test_bid_urls(num_urls){
     // temporary function to generate bunch of test bid URLs
-    var base_url = "http://104.154.59.193:5000/bid?";
+    //var base_url = "http://104.154.59.193:5000/bid?";
+    var base_url = "http://127.0.0.1:5000/bid?";
     var urls = [];
     for (var i = 0; i < num_urls; i++) {
         var query = {
-            "bidder_id": Math.round(Math.random() * 10e2)
+            "bidder_id": Math.round(Math.random() * 10)
         };
         urls.push(base_url + querystring.encode(query));
     }
@@ -47,11 +48,18 @@ app.get('/exchange/test_auction', function(request, response){
     br.get_bids(bid_urls, request, function(err, result){
         if (err) throw err;
         winning_bid = br.run_auction(result, function(err, winning_bid){
-            response.status(200).json(winning_bid)
+            response.status(200).json(winning_bid);
+            console.log("AUCTION_INFO: Auction " + winning_bid.bidobj__id + "; ParentBidId " +
+                        winning_bid.bidobj__bidid + "; BidId " + winning_bid.id + "; ImpId " +
+                        winning_bid.impid);
+            br.send_win_notice(winning_bid,function(err,nurl,response){
+                console.log("GET request sent to " + nurl + ", Status: " + response.statusCode);
+            })
         });
     });
 });
 
+//RTB Test page, just a placeholder
 app.get('/rtb_test', function(request, response){
     var fn = jade.compileFile('./templates/rtb_test.jade', null);
     var html = fn();
