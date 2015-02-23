@@ -52,7 +52,12 @@ app.listen(app.get('port'), function() {
 function generate_test_bid_urls(num_urls){
     // temporary function to generate bunch of test bid URLs
     //var base_url = "http://104.154.59.193:5000/bid?";
-    var base_url = "http://127.0.0.1:5000/bid?";
+    var base_url;
+    if (process.env.NODE_ENV == 'local') {
+        base_url = "http://127.0.0.1:5000/bid?";
+    } else if (process.env.NODE_ENV == 'production') {
+        base_url = "http://104.154.59.193:5000/bid?";
+    }
     var urls = [];
     for (var i = 0; i < num_urls; i++) {
         var query = {
