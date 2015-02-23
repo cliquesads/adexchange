@@ -12,6 +12,10 @@ var path = require('path');
 var util = require('util');
 var responseTime = require('response-time');
 
+//TODO: Cookie handling, logging, win-notifications,
+//TODO: Update README.md, invocation-tags (client-side shit),
+//TODO: Use cluster module to improve load-handling (http://nodejs.org/docs/latest/api/cluster.html)
+
 
 // Set up winston logger instance
 var logfile = path.join(process.env['HOME'],'logs',util.format('adexchange_%s.log',Date.now()));
@@ -22,10 +26,6 @@ var logger = new (winston.Logger)({
     ]
 });
 
-//TODO: Cookie handling, logging, win-notifications,
-//TODO: Update README.md, invocation-tags (client-side shit),
-//TODO: Use cluster module to improve load-handling (http://nodejs.org/docs/latest/api/cluster.html)
-
 var app = express();
 
 /* BEGIN EXPRESS MIDDLEWARE */
@@ -35,7 +35,6 @@ app.use(function(req, res, next) {
     req.clientIp = requestIp.getClientIp(req); // on localhost > 127.0.0.1
     next();
 });
-
 app.use(responseTime());
 
 app.set('port', (process.env.PORT || 5100));
@@ -81,10 +80,9 @@ app.get('/exchange/test_auction', function(request, response){
             winning_bid = br.run_auction(result, function(err, winning_bid){
                 response.status(200).json(winning_bid);
                 //log response
-                node_utils.logging.log_response(logger, response);
+
                 //log auction info
                 var auction_meta = {
-                    type: 'auction',
                     bidobj__id: winning_bid.bidobj__id,
                     bidobj__bidid: winning_bid.bidobj__bidid,
                     bidid: winning_bid.id,
@@ -93,7 +91,8 @@ app.get('/exchange/test_auction', function(request, response){
                     bid1: winning_bid.price,
                     clearprice: winning_bid.clearprice
                 };
-                logger.info("AUCTION %s", winning_bid.bidobj__id, auction_meta);
+                node_utils.logging.log_response(logger, response, auction_meta);
+                //logger.info("AUCTION %s", winning_bid.bidobj__id, auction_meta);
 
                 br.send_win_notice(winning_bid,function(err,nurl,response){
                     //TODO: handle errors better here
@@ -112,10 +111,11 @@ app.get('/exchange/test_auction', function(request, response){
     });
 });
 
-
 //RTB Test page, just a placeholder
 app.get('/rtb_test', function(request, response){
     var fn = jade.compileFile('./templates/rtb_test.jade', null);
     var html = fn();
+    node_utils.logging.log_request(logger, request);
     response.send(html);
+    node_utils.logging.log_response(logger, response);
 });
