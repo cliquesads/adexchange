@@ -4,6 +4,7 @@ var node_utils = require('cliques_node_utils');
 
 //third-party packages
 var express = require('express');
+var app = express();
 var querystring = require('querystring');
 var jade = require('jade');
 var requestIp = require('request-ip');
@@ -16,19 +17,35 @@ var responseTime = require('response-time');
 //TODO: Update README.md, invocation-tags (client-side shit),
 //TODO: Use cluster module to improve load-handling (http://nodejs.org/docs/latest/api/cluster.html)
 
+/*
+BEGIN Environment detection & configuraton
+ */
+var NODE_ENV = process.env.NODE_ENV || 'local'; //default to local
+if (NODE_ENV == 'local') {
+    var bidder_url = "http://127.0.0.1:5000/bid?";
+    var logfile = path.join(process.env['HOME'],'logs',util.format('adexchange_%s.log',Date.now()));
+    var logger = new (winston.Logger)({
+        transports: [
+            new (winston.transports.Console)({timestamp:true}),
+            new (winston.transports.File)({filename:logfile,timestamp:true})
+        ]
+    });
+} else if (NODE_ENV == 'production') {
+    bidder_url = "http://104.154.59.193:5000/bid?";
+    logger = new (winston.Logger)({
+        transports: [
+            new (winston.transports.Console)({timestamp:true})
+        ]
+    });
+}
+/*
+END Env. detection & config
+ */
 
-// Set up winston logger instance
-var logfile = path.join(process.env['HOME'],'logs',util.format('adexchange_%s.log',Date.now()));
-var logger = new (winston.Logger)({
-    transports: [
-        new (winston.transports.Console)({timestamp:true}),
-        new (winston.transports.File)({filename:logfile,timestamp:true})
-    ]
-});
 
-var app = express();
-
-/* BEGIN EXPRESS MIDDLEWARE */
+/*
+BEGIN EXPRESS MIDDLEWARE
+*/
 
 // inside request-ip middleware handler
 app.use(function(req, res, next) {
@@ -36,9 +53,15 @@ app.use(function(req, res, next) {
     next();
 });
 app.use(responseTime());
-
 app.set('port', (process.env.PORT || 5100));
 app.use(express.static(__dirname + '/public'));
+
+/* END EXPRESS MIDDLEWARE */
+
+
+/*
+    HTTP Endpoints
+ */
 
 app.get('/', function(request, response) {
     response.send('Welcome to the Cliques Ad Exchange');
@@ -51,18 +74,12 @@ app.listen(app.get('port'), function() {
 function generate_test_bid_urls(num_urls){
     // temporary function to generate bunch of test bid URLs
     //var base_url = "http://104.154.59.193:5000/bid?";
-    var base_url;
-    if (process.env.NODE_ENV == 'local') {
-        base_url = "http://127.0.0.1:5000/bid?";
-    } else if (process.env.NODE_ENV == 'production') {
-        base_url = "http://104.154.59.193:5000/bid?";
-    }
     var urls = [];
     for (var i = 0; i < num_urls; i++) {
         var query = {
             "bidder_id": Math.round(Math.random() * 10)
         };
-        urls.push(base_url + querystring.encode(query));
+        urls.push(bidder_url + querystring.encode(query));
     }
     return urls;
 }
@@ -75,7 +92,10 @@ app.get('/exchange/test_auction', function(request, response){
     node_utils.logging.log_request(logger,request);
     br.get_bids(bid_urls, request, function(err, result){
         if (err) {
-            logger.error(err)
+
+            logger.error(err);
+            // TODO: figure out what default response is if no winning bid comes back
+
         } else{
             winning_bid = br.run_auction(result, function(err, winning_bid){
                 response.status(200).json(winning_bid);
