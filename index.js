@@ -124,7 +124,7 @@ app.get('/exchange/test_auction', function(request, response){
                         nurl: nurl,
                         statusCode: response.statusCode
                     };
-                    logger.info("WIN-NOTICE request-url=%s status=%s", nurl, response.statusCode, win_notice_meta);
+                    logger.info("WIN-NOTICE", win_notice_meta);
                 });
             });
         }
