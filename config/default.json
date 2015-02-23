@@ -1,10 +1,10 @@
 {
-  "redis":
-  {
-    "rediscloud_url": "redis://rediscloud:yD0AxNUAU7KPyurf@pub-redis-15474.us-east-1-4.2.ec2.garantiadata.com:15474"
-  },
-  "bidder":
-  {
-    "bidder_url": "http://127.0.0.1:5000/bid?"
+  "Exchange": {
+    "redis": {
+      "rediscloud_url": "redis://rediscloud:yD0AxNUAU7KPyurf@pub-redis-15474.us-east-1-4.2.ec2.garantiadata.com:15474"
+    },
+    "bidder": {
+      "url": "http://127.0.0.1:5000/bid?"
+    }
   }
 }

@@ -21,9 +21,11 @@ var config = require('config');
 /*
 BEGIN Environment detection & configuraton
  */
+
+//TODO: this is just a hack to prevent Heroku build from failing due to log file creation, remove once
+//TODO: you migrate to something else
 var NODE_ENV = process.env.NODE_ENV || 'local'; //default to local
 if (NODE_ENV == 'local') {
-    var bidder_url = "http://127.0.0.1:5000/bid?";
     var logfile = path.join(process.env['HOME'],'logs',util.format('adexchange_%s.log',Date.now()));
     var logger = new (winston.Logger)({
         transports: [
@@ -32,7 +34,6 @@ if (NODE_ENV == 'local') {
         ]
     });
 } else if (NODE_ENV == 'production') {
-    bidder_url = "http://104.154.59.193:5000/bid?";
     logger = new (winston.Logger)({
         transports: [
             new (winston.transports.Console)({timestamp:true})
@@ -56,7 +57,6 @@ app.use(function(req, res, next) {
 app.use(responseTime());
 app.set('port', (process.env.PORT || 5100));
 app.use(express.static(__dirname + '/public'));
-
 /* END EXPRESS MIDDLEWARE */
 
 
@@ -67,7 +67,6 @@ app.use(express.static(__dirname + '/public'));
 app.get('/', function(request, response) {
     response.send('Welcome to the Cliques Ad Exchange');
 });
-
 app.listen(app.get('port'), function() {
     logger.info("Node app is running at localhost:" + app.get('port'));
 });
@@ -75,6 +74,7 @@ app.listen(app.get('port'), function() {
 function generate_test_bid_urls(num_urls){
     // temporary function to generate bunch of test bid URLs
     //var base_url = "http://104.154.59.193:5000/bid?";
+    var bidder_url = config.get('Exchange.bidder.url');
     var urls = [];
     for (var i = 0; i < num_urls; i++) {
         var query = {

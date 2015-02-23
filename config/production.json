@@ -1,6 +1,7 @@
 {
-  "bidder":
-  {
-    "bidder_url": "http://104.154.59.193:5000/bid?"
+  "Exchange": {
+    "bidder": {
+      "url": "http://104.154.59.193:5000/bid?"
+    }
   }
 }
