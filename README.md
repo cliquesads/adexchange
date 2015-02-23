@@ -19,6 +19,16 @@ $ node index.js
 
 Your app should now be running on [localhost:5100](http://localhost:5100/).
 
+## Installing New Dependencies
+
+Dependencies are sweet. NPM makes them super easy to download and install. But to ensure that any new dependencies get deployed (and that the build doesn't fail), you must use the '--save' flag when you use NPM:
+
+```sh
+$ npm install --save some-library
+```
+
+This way, the dependency will be added to "dependencies" in package.json.
+
 ## Deploying to Heroku
 
 ```

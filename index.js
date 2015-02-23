@@ -18,9 +18,6 @@ var config = require('config');
 //TODO: invocation-tags (client-side shit),
 //TODO: Use cluster module to improve load-handling (http://nodejs.org/docs/latest/api/cluster.html)
 
-/*
-BEGIN Environment detection & configuraton
- */
 
 //TODO: this is just a hack to prevent Heroku build from failing due to log file creation, remove once
 //TODO: you migrate to something else
@@ -97,7 +94,7 @@ app.get('/exchange/test_auction', function(request, response){
             logger.error(err);
             // TODO: figure out what default response is if no winning bid comes back
 
-        } else{
+        } else {
             winning_bid = br.run_auction(result, function(err, winning_bid){
                 response.status(200).json(winning_bid);
                 //log response
