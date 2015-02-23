@@ -13,8 +13,8 @@ var path = require('path');
 var util = require('util');
 var responseTime = require('response-time');
 
-//TODO: Cookie handling, logging, win-notifications,
-//TODO: Update README.md, invocation-tags (client-side shit),
+//TODO: Cookie handling
+//TODO: invocation-tags (client-side shit),
 //TODO: Use cluster module to improve load-handling (http://nodejs.org/docs/latest/api/cluster.html)
 
 /*
