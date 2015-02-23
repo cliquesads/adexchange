@@ -12,6 +12,7 @@ var winston = require('winston');
 var path = require('path');
 var util = require('util');
 var responseTime = require('response-time');
+var config = require('config');
 
 //TODO: Cookie handling
 //TODO: invocation-tags (client-side shit),
