@@ -145,9 +145,14 @@ app.get('/exchange/test_auction', function(request, response){
 
 //RTB Test page, just a placeholder
 app.get('/rtb_test', function(request, response){
-    var fn = jade.compileFile('./templates/rtb_test.jade', null);
-    var html = fn();
-    node_utils.logging.log_request(logger, request);
-    response.send(html);
-    node_utils.logging.log_response(logger, response);
+    // fake the referer address just for show in the request data object
+    request.headers.referer = 'http://' + request.headers['host'] + request.originalUrl;
+    // generate request data again just for show
+    var request_data = br._create_single_imp_bid_request(request,function(err,request_data){
+        var fn = jade.compileFile('./templates/rtb_test.jade', null);
+        var html = fn({request_data: JSON.stringify(request_data, null, 2)});
+        node_utils.logging.log_request(logger, request);
+        response.send(html);
+        node_utils.logging.log_response(logger, response);
+    });
 });
