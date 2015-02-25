@@ -1,6 +1,7 @@
 //first-party packages
 var br = require('./lib/bid_requests');
 var node_utils = require('cliques_node_utils');
+var cliques_cookies = require('./lib/cookies');
 
 //third-party packages
 var express = require('express');
@@ -11,13 +12,12 @@ var requestIp = require('request-ip');
 var winston = require('winston');
 var path = require('path');
 var util = require('util');
-var url = require('url');
-var uuid = require('node-uuid');
 var cookieParser = require('cookie-parser');
+var url = require('url');
 var redis = require('redis');
 var responseTime = require('response-time');
 var config = require('config');
-require('date-utils'); // hook for date-utils module
+
 
 //TODO: Cookie handling
 //TODO: invocation-tags (client-side shit),
@@ -52,6 +52,10 @@ app.use(cookieParser());
 app.use(responseTime());
 app.set('port', (process.env.PORT || 5100));
 app.use(express.static(__dirname + '/public'));
+
+// custom cookie-parsing middleware
+app.use(cliques_cookies.get_or_set_uuid);
+
 /*  END EXPRESS MIDDLEWARE  */
 
 ///*  BEGIN Redis Configuration   */
@@ -69,6 +73,7 @@ app.use(express.static(__dirname + '/public'));
 app.get('/', function(request, response) {
     response.send('Welcome to the Cliques Ad Exchange');
 });
+
 app.listen(app.get('port'), function() {
     logger.info("Node app is running at localhost:" + app.get('port'));
 });
@@ -86,52 +91,15 @@ function generate_test_bid_urls(num_urls){
     return urls;
 }
 
-function get_or_set_cookie(request, response, new_cookie_vals, days_expiration, callback){
-    /*
-        Handles cookie setting & getting for exchange cookies.
-
-        If cookie key,val is found in request (for each key,val passed in new_cookie_vals object)
-        then that cookie's expiration is updated and existing key,val are returned.
-
-        If not, then set cookie & return the new key,val pair
-     */
-
-    days_expiration = days_expiration || 30; // set 30-day default
-    var max_age = days_expiration * 24 * 60 * 60 * 1000;
-    var now = new Date;
-    var expiration = now.addDays(days_expiration);
-    var secure = false;
-    if (request.protocol == 'https'){
-        secure = true;
-    }
-    var cookie_options = {'maxAge': max_age, 'expires': expiration, 'secure': secure};
-    var results = {};
-    for (var key in new_cookie_vals){
-        if (new_cookie_vals.hasOwnProperty(key)) {
-            if (request.cookies[key]) {
-                var val = request.cookies[key];
-                response.cookie(key, val, cookie_options);
-                results[key] = val;
-            } else {
-                response.cookie(key, new_cookie_vals[key], cookie_options);
-                results[key] = new_cookie_vals[key];
-            }
-        }
-    }
-    callback(null, results);
-}
-
 app.get('/exchange/test_auction', function(request, response){
     // Test runs & vars
     //TODO: Add some logic here to figure out how bid urls are retrieved
     var bid_urls = generate_test_bid_urls(10);
     var winning_bid = {};
-    node_utils.logging.log_request(logger,request);
 
-    //var cookie = Cookie.parse(request.headers);
-    get_or_set_cookie(request, response,{'uuid': uuid.v1()},30,function(err,cookie){
-        console.log(cookie)
-    });
+    // log request, add uuid metadata
+    node_utils.logging.log_request(logger,request,
+        { 'req_uuid':request.old_uuid, 'uuid': request.uuid });
 
     br.get_bids(bid_urls, request, function(err, result){
         if (err) {
@@ -140,6 +108,7 @@ app.get('/exchange/test_auction', function(request, response){
             // TODO: figure out what default response is if no winning bid comes back
 
         } else {
+
             winning_bid = br.run_auction(result, function(err, winning_bid){
                 //get_or_set_cookie(request, response, 30, function(err, cookie){
                 response.status(200).json(winning_bid);
