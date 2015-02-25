@@ -18,10 +18,7 @@ var redis = require('redis');
 var responseTime = require('response-time');
 var config = require('config');
 
-
-//TODO: Cookie handling
 //TODO: invocation-tags (client-side shit),
-//TODO: Use cluster module to improve load-handling (http://nodejs.org/docs/latest/api/cluster.html)
 
 //TODO: this is just a hack to prevent Heroku build from failing due to log file creation, remove once
 //TODO: you migrate to something else
@@ -80,6 +77,7 @@ app.listen(app.get('port'), function() {
 
 function generate_test_bid_urls(num_urls){
     // temporary function to generate bunch of test bid URLs
+    // TODO REPLACE
     var bidder_url = config.get('Exchange.bidder.url');
     var urls = [];
     for (var i = 0; i < num_urls; i++) {
@@ -92,25 +90,31 @@ function generate_test_bid_urls(num_urls){
 }
 
 app.get('/exchange/test_auction', function(request, response){
-    // Test runs & vars
+    /*  Main function to handle incoming impression requests & respond with winning ad markup.
+
+    Does the following, in order:
+    1) Logs incoming request
+    2) Retrieves bids via HTTP POST requests using OpenRTB 2.3 bid request object
+    3) Runs 2nd-price Vickrey auction based on bid-responses
+    4) Returns winning ad markup in HTTP JSON response
+    5) Logs response w/ winning bid metadata
+    6) Sends win-notice via HTTP GET to winning bidder */
+
     //TODO: Add some logic here to figure out how bid urls are retrieved
     var bid_urls = generate_test_bid_urls(10);
-    var winning_bid = {};
 
     // log request, add uuid metadata
     node_utils.logging.log_request(logger,request,
         { 'req_uuid':request.old_uuid, 'uuid': request.uuid });
 
+    // now do the hard stuff
     br.get_bids(bid_urls, request, function(err, result){
         if (err) {
-
             logger.error(err);
             // TODO: figure out what default response is if no winning bid comes back
-
         } else {
-
-            winning_bid = br.run_auction(result, function(err, winning_bid){
-                //get_or_set_cookie(request, response, 30, function(err, cookie){
+            br.run_auction(result, function(err, winning_bid){
+                //get_or_set_cookie(request, response, 30, function(err, cookie)
                 response.status(200).json(winning_bid);
                 var auction_meta = {
                     bidobj__id: winning_bid.bidobj__id,
@@ -122,8 +126,6 @@ app.get('/exchange/test_auction', function(request, response){
                     clearprice: winning_bid.clearprice
                 };
                 node_utils.logging.log_response(logger, response, auction_meta);
-                //logger.info("AUCTION %s", winning_bid.bidobj__id, auction_meta);
-
                 br.send_win_notice(winning_bid,function(err,nurl,response){
                     //TODO: handle errors better here
                     if (err) {
