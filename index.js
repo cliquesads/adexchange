@@ -108,7 +108,6 @@ app.get('/exchange/test_auction', function(request, response){
             // TODO: figure out what default response is if no winning bid comes back
 
         } else {
-
             winning_bid = br.run_auction(result, function(err, winning_bid){
                 //get_or_set_cookie(request, response, 30, function(err, cookie){
                 response.status(200).json(winning_bid);
