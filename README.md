@@ -17,7 +17,7 @@ $ npm install
 $ node index.js
 ```
 
-Your app should now be running on [localhost:5100](http://localhost:5100/).
+Your app should now be running on [localhost:5000](http://localhost:5000/).
 
 ## Installing New Dependencies
 
@@ -29,20 +29,33 @@ $ npm install --save some-library
 
 This way, the dependency will be added to "dependencies" in package.json.
 
-## Deploying to Heroku
+## Running in Production
+
+First, make sure the repository is cloned into the appropriate directory. Then:
 
 ```
-$ heroku create
-$ git push heroku master
-$ heroku open
+$ git pull
+$ npm install #install any dependencies
+$ source activate_production.sh
+$ pm2 start index.js --name adexchange -i 0 # this will run the exchange on all available CPU's
 ```
 
-## Documentation
+# Key Dependencies
 
-For more information about using Node.js on Heroku, see these Dev Center articles:
+## Geo Lookup
 
-- [Getting Started with Node.js on Heroku](https://devcenter.heroku.com/articles/getting-started-with-nodejs)
-- [Heroku Node.js Support](https://devcenter.heroku.com/articles/nodejs-support)
-- [Node.js on Heroku](https://devcenter.heroku.com/categories/nodejs)
-- [Best Practices for Node.js Development](https://devcenter.heroku.com/articles/node-best-practices)
-- [Using WebSockets on Heroku with Node.js](https://devcenter.heroku.com/articles/node-websockets)
+IP-Geo lookup is handled by MaxMind using their paying [GeoIP2 City Database binary](https://www.maxmind.com/en/geoip2-city), and [node-maxmind](https://github.com/runk/node-maxmind), the pure JS API for this database.
+
+Currently, you must use the "legacy" `GeoIPCity.dat` binary, as the newer GeoIP2 `.mmdb` files are not yet supported by node-maxmind.
+
+### IMPORTANT
+
+The database file needs to be stored in `~/data/maxmind/GeoIPCity.dat`, otherwise the server will crash immediately.
+
+## User-Agent Parsing
+
+This is handled by a combination of [ua-parser2](https://github.com/commenthol/ua-parser2) and [mobile-detect](https://github.com/hgoebl/mobile-detect.js).
+
+ua-parser2 was chosen because it is based on the most widely-used user-agent parsing regex collection out there, [ua-parser](https://github.com/tobie/ua-parser).  There are some other js libraries to handle this task, but I think this is the most robust.
+
+mobile-detect is only used to discern between phone and tablet user-agent strings at the `devicetype` level, which is not a trivial task.  It is only invoked if the devicetype is determined to be mobile, it never gets called for desktops.
