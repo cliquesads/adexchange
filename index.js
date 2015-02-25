@@ -4,6 +4,7 @@ var node_utils = require('cliques_node_utils');
 var cliques_cookies = require('./lib/cookies');
 
 //third-party packages
+var pmx = require('pmx').init();
 var express = require('express');
 var app = express();
 var querystring = require('querystring');
@@ -13,17 +14,16 @@ var winston = require('winston');
 var path = require('path');
 var util = require('util');
 var cookieParser = require('cookie-parser');
-var url = require('url');
-var redis = require('redis');
 var responseTime = require('response-time');
 var config = require('config');
 
 //TODO: invocation-tags (client-side shit),
+//TODO: error-handling in middleware to avoid failures,
+//TODO: add network monitoring of some sort like Graphite
+//TODO: default ad condition
+//TODO: set timeouts on bid requests
+//TODO: figure out pub tag taxonomy
 
-//TODO: this is just a hack to prevent Heroku build from failing due to log file creation, remove once
-//TODO: you migrate to something else
-//var NODE_ENV = process.env.NODE_ENV || 'local'; //default to local
-//if (NODE_ENV == 'local') {
 var logfile = path.join(process.env['HOME'],'logs',util.format('adexchange_%s.log',Date.now()));
 var logger = new (winston.Logger)({
     transports: [
@@ -31,13 +31,6 @@ var logger = new (winston.Logger)({
         new (winston.transports.File)({filename:logfile,timestamp:true})
     ]
 });
-//} else if (NODE_ENV == 'production') {
-//    logger = new (winston.Logger)({
-//        transports: [
-//            new (winston.transports.Console)({timestamp:true})
-//        ]
-//    });
-//}
 
 /*  BEGIN EXPRESS MIDDLEWARE    */
 // inside request-ip middleware handler
@@ -54,17 +47,6 @@ app.use(express.static(__dirname + '/public'));
 app.use(cliques_cookies.get_or_set_uuid);
 
 /*  END EXPRESS MIDDLEWARE  */
-
-///*  BEGIN Redis Configuration   */
-//var redisURL = url.parse(config.get('Exchange.redis.rediscloud_url'));
-//var client = redis.createClient(redisURL.port, redisURL.hostname, { no_ready_check: true });
-//client.auth(redisURL.auth.split(':')[1]);
-///*  END Redis Configuration */
-//
-///* Cookie/Redis setup */
-//var Cookie = tough.Cookie;
-//var redisCookieJar = new tough.CookieJar(new redisCookieStore(client));
-
 
 /*  HTTP Endpoints  */
 app.get('/', function(request, response) {

@@ -20,6 +20,7 @@
     "mongodb": "~1.4.x",
     "mongoose": "~3.8.x",
     "node-uuid": "^1.4.2",
+    "pmx": "^0.3.3",
     "redis": "^0.12.1",
     "request": "^2.53.0",
     "request-ip": "^0.0.4",
