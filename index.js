@@ -47,7 +47,7 @@ app.use(function(req, res, next) {
 });
 app.use(cookieParser());
 app.use(responseTime());
-app.set('port', (process.env.PORT || 5100));
+app.set('port', (process.env.PORT || 5000));
 app.use(express.static(__dirname + '/public'));
 
 // custom cookie-parsing middleware
