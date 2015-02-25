@@ -22,22 +22,22 @@ var config = require('config');
 
 //TODO: this is just a hack to prevent Heroku build from failing due to log file creation, remove once
 //TODO: you migrate to something else
-var NODE_ENV = process.env.NODE_ENV || 'local'; //default to local
-if (NODE_ENV == 'local') {
-    var logfile = path.join(process.env['HOME'],'logs',util.format('adexchange_%s.log',Date.now()));
-    var logger = new (winston.Logger)({
-        transports: [
-            new (winston.transports.Console)({timestamp:true}),
-            new (winston.transports.File)({filename:logfile,timestamp:true})
-        ]
-    });
-} else if (NODE_ENV == 'production') {
-    logger = new (winston.Logger)({
-        transports: [
-            new (winston.transports.Console)({timestamp:true})
-        ]
-    });
-}
+//var NODE_ENV = process.env.NODE_ENV || 'local'; //default to local
+//if (NODE_ENV == 'local') {
+var logfile = path.join(process.env['HOME'],'logs',util.format('adexchange_%s.log',Date.now()));
+var logger = new (winston.Logger)({
+    transports: [
+        new (winston.transports.Console)({timestamp:true}),
+        new (winston.transports.File)({filename:logfile,timestamp:true})
+    ]
+});
+//} else if (NODE_ENV == 'production') {
+//    logger = new (winston.Logger)({
+//        transports: [
+//            new (winston.transports.Console)({timestamp:true})
+//        ]
+//    });
+//}
 
 /*  BEGIN EXPRESS MIDDLEWARE    */
 // inside request-ip middleware handler
