@@ -20,7 +20,6 @@ var config = require('config');
 
 //TODO: invocation-tags (client-side shit),
 //TODO: error-handling in middleware to avoid failures,
-//TODO: add network monitoring of some sort like Graphite
 //TODO: default ad condition
 //TODO: set timeouts on bid requests
 //TODO: figure out pub tag taxonomy

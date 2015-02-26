@@ -1,6 +1,6 @@
 {
   "name": "cliquesadexchange",
-  "version": "0.1.2",
+  "version": "0.0.2",
   "description": "Cliques Ad Exchange",
   "main": "index.js",
   "scripts": {
@@ -41,5 +41,27 @@
     "heroku",
     "express"
   ],
-  "license": "MIT"
+  "license": "MIT",
+  "bundleDependencies": [
+    "async",
+    "cliques-node-utils",
+    "config",
+    "cookie-parser",
+    "date-utils",
+    "express",
+    "jade",
+    "mathjs",
+    "maxmind",
+    "mobile-detect",
+    "mongodb",
+    "mongoose",
+    "node-uuid",
+    "pmx",
+    "redis",
+    "request",
+    "request-ip",
+    "response-time",
+    "ua-parser2",
+    "winston"
+  ]
 }
