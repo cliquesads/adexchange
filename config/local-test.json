@@ -1,0 +1,11 @@
+{
+  "Exchange": {
+    "bidder": {
+      "url": "http://127.0.0.1:5000/bid?"
+    },
+    "nodetime": {
+      "license_key": "f53055d27c16b54a6496134d57eb7aedf6ac9312",
+      "appName": "adexchange"
+    }
+  }
+}

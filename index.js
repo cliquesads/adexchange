@@ -3,9 +3,10 @@ var br = require('./lib/bid_requests');
 var node_utils = require('cliques_node_utils');
 var cliques_cookies = require('./lib/cookies');
 
+
 //third-party packages
-var pmx = require('pmx').init();
 var express = require('express');
+var pmx = require('pmx').init();
 var app = express();
 var querystring = require('querystring');
 var jade = require('jade');
@@ -32,6 +33,14 @@ var logger = new (winston.Logger)({
     ]
 });
 
+// Only enable Nodetime in local test env
+if (process.env.NODE_ENV == 'local-test'){
+    require('nodetime').profile({
+        accountKey: config.get('Exchange.nodetime.license_key'),
+        appName: config.get('Exchange.nodetime.appName')
+    });
+}
+
 /*  BEGIN EXPRESS MIDDLEWARE    */
 // inside request-ip middleware handler
 app.use(function(req, res, next) {
@@ -40,7 +49,7 @@ app.use(function(req, res, next) {
 });
 app.use(cookieParser());
 app.use(responseTime());
-app.set('port', (process.env.PORT || 5000));
+app.set('port', (process.env.PORT || 5100));
 app.use(express.static(__dirname + '/public'));
 
 // custom cookie-parsing middleware
