@@ -11,6 +11,9 @@
     },
     "openrtb": {
       "version": 2.3
+    },
+    "http": {
+      "port": 5000
     }
   }
 }
