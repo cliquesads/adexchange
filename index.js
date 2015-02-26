@@ -3,10 +3,11 @@ var br = require('./lib/bid_requests');
 var node_utils = require('cliques_node_utils');
 var cliques_cookies = require('./lib/cookies');
 
+//have to require PMX before express to enable monitoring
+var pmx = require('pmx').init();
 
 //third-party packages
 var express = require('express');
-var pmx = require('pmx').init();
 var app = express();
 var querystring = require('querystring');
 var jade = require('jade');
