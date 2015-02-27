@@ -60,12 +60,6 @@ app.use(express.static(__dirname + '/public'));
 // custom cookie-parsing middleware
 app.use(cliques_cookies.get_or_set_uuid);
 
-// Generic, top-level error handling
-app.use(function(err, request, response, next){
-    logger.error(err.stack);
-    response.status(500).send("INTERNAL SERVER ERROR: Sorry, we're looking into this!");
-});
-
 /*  END EXPRESS MIDDLEWARE  */
 
 /*  HTTP Endpoints  */
