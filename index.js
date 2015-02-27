@@ -97,7 +97,7 @@ app.get('/exchange/test_auction', function(request, response){
     6) Sends win-notice via HTTP GET to winning bidder */
 
     //TODO: Add some logic here to figure out how bid urls are retrieved
-    var bid_urls = generate_test_bid_urls(5);
+    var bid_urls = generate_test_bid_urls(3);
 
     // log request, add uuid metadata
     node_utils.logging.log_request(logger,request,
