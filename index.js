@@ -151,9 +151,15 @@ app.get('/rtb_test', function(request, response){
     // fake the referer address just for show in the request data object
     request.headers.referer = 'http://' + request.headers['host'] + request.originalUrl;
     // generate request data again just for show
-    var request_data = br._create_single_imp_bid_request(request,function(err,request_data){
+    request.query = {
+        "h": 250 || request.query.h,
+        "w": 300 || request.query.w,
+        "pos": 0 || request.query.pos
+    };
+    var qs = querystring.encode(request.query);
+    br._create_single_imp_bid_request(request,function(err,request_data){
         var fn = jade.compileFile('./templates/rtb_test.jade', null);
-        var html = fn({request_data: JSON.stringify(request_data, null, 2)});
+        var html = fn({request_data: JSON.stringify(request_data, null, 2), qs: qs});
         node_utils.logging.log_request(logger, request);
         response.send(html);
         node_utils.logging.log_response(logger, response);
