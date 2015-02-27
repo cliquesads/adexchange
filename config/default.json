@@ -5,7 +5,7 @@
     },
     "bidder": {
       "url": "http://10.240.208.148:5100/bid?",
-      "timeout": 2000 //time to wait for individual bid responses
+      "timeout": 3000 //time to wait for individual bid responses
     },
     "defaultcondition": {
       "300x250": "<img src='http://storage.googleapis.com/cliquesads-ads/psa/adc_cob_drink_300x250.jpg'/>"
