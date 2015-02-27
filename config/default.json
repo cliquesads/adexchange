@@ -4,7 +4,7 @@
       "rediscloud_url": "redis://rediscloud:yD0AxNUAU7KPyurf@pub-redis-15474.us-east-1-4.2.ec2.garantiadata.com:15474"
     },
     "bidder": {
-      "url": "http://10.240.208.148:5100/bid?",
+      "url": "http://localhost:5100/bid?",
       "timeout": 5000 //time to wait for individual bid responses
     },
     "defaultcondition": {
