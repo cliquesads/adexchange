@@ -4,7 +4,11 @@
       "rediscloud_url": "redis://rediscloud:yD0AxNUAU7KPyurf@pub-redis-15474.us-east-1-4.2.ec2.garantiadata.com:15474"
     },
     "bidder": {
-      "url": "http://104.154.59.193:5000/bid?"
+      "url": "http://104.154.59.193:5000/bid?",
+      "timeout": 200 //time to wait for individual bid responses
+    },
+    "defaultcondition": {
+      "300x250": "<img src='http://storage.googleapis.com/cliquesads-ads/psa/adc_cob_drink_300x250.jpg'/>"
     },
     "cookies": {
       "expirationdays": 30

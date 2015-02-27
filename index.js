@@ -20,18 +20,22 @@ var responseTime = require('response-time');
 var config = require('config');
 
 //TODO: invocation-tags (client-side shit),
-//TODO: error-handling in middleware to avoid failures,
-//TODO: default ad condition
-//TODO: set timeouts on bid requests
 //TODO: figure out pub tag taxonomy
 
-var logfile = path.join(process.env['HOME'],'logs',util.format('adexchange_%s.log',Date.now()));
+/*  BEGIN logging setup     */
+var logfile = path.join(
+    process.env['HOME'],
+    'logs',
+    util.format('adexchange_%s.log',node_utils.dates.isoFormatUTCNow())
+);
 var logger = new (winston.Logger)({
     transports: [
         new (winston.transports.Console)({timestamp:true}),
         new (winston.transports.File)({filename:logfile,timestamp:true})
     ]
 });
+/*  END Logging setup   */
+
 
 // Only enable Nodetime in local test env
 if (process.env.NODE_ENV == 'local-test'){
@@ -42,6 +46,7 @@ if (process.env.NODE_ENV == 'local-test'){
 }
 
 /*  BEGIN EXPRESS MIDDLEWARE    */
+
 // inside request-ip middleware handler
 app.use(function(req, res, next) {
     req.clientIp = requestIp.getClientIp(req); // on localhost > 127.0.0.1
@@ -54,6 +59,12 @@ app.use(express.static(__dirname + '/public'));
 
 // custom cookie-parsing middleware
 app.use(cliques_cookies.get_or_set_uuid);
+
+// Generic, top-level error handling
+app.use(function(err, request, response, next){
+    logger.error(err.stack);
+    response.status(500).send("INTERNAL SERVER ERROR: Sorry, we're looking into this!");
+});
 
 /*  END EXPRESS MIDDLEWARE  */
 
@@ -99,13 +110,20 @@ app.get('/exchange/test_auction', function(request, response){
         { 'req_uuid':request.old_uuid, 'uuid': request.uuid });
 
     // now do the hard stuff
-    br.get_bids(bid_urls, request, function(err, result){
-        if (err) {
-            logger.error(err);
-            // TODO: figure out what default response is if no winning bid comes back
-        } else {
-            br.run_auction(result, function(err, winning_bid){
-                //get_or_set_cookie(request, response, 30, function(err, cookie)
+    // TODO: this error handling is a mess, should be able to be simplified into
+    // TODO: one wrapper try/catch but I can't get it to work
+    try {
+        br.get_bids(bid_urls, request, logger, function (err, result) {
+            if (err) throw err;
+            br.run_auction(result, function (er, winning_bid) {
+                //this doesn't really work as expected, not throwing and being caught by
+                //try clause
+                if (er) {
+                    //throw er;
+                    br.handle_default_condition(request, response);
+                    logger.error(er);
+                    return
+                }
                 response.status(200).json(winning_bid);
                 var auction_meta = {
                     bidobj__id: winning_bid.bidobj__id,
@@ -117,11 +135,8 @@ app.get('/exchange/test_auction', function(request, response){
                     clearprice: winning_bid.clearprice
                 };
                 node_utils.logging.log_response(logger, response, auction_meta);
-                br.send_win_notice(winning_bid,function(err,nurl,response){
-                    //TODO: handle errors better here
-                    if (err) {
-                        logger.error(err);
-                    }
+                br.send_win_notice(winning_bid, function (err, nurl, response) {
+                    if (err) throw err;
                     var win_notice_meta = {
                         type: 'win-notice',
                         nurl: nurl,
@@ -130,8 +145,11 @@ app.get('/exchange/test_auction', function(request, response){
                     logger.info("WIN-NOTICE", win_notice_meta);
                 });
             });
-        }
-    });
+        });
+    } catch (e){
+        br.handle_default_condition(request, response);
+        logger.error(e);
+    }
 });
 
 //RTB Test page, just a placeholder
