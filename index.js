@@ -4,7 +4,7 @@ var node_utils = require('cliques_node_utils');
 var cliques_cookies = require('./lib/cookies');
 
 //have to require PMX before express to enable monitoring
-var pmx = require('pmx').init();
+//var pmx = require('pmx').init();
 
 //third-party packages
 var express = require('express');
