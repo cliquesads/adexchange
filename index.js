@@ -72,7 +72,7 @@ app.listen(app.get('port'), function() {
     logger.info("Node app is running at localhost:" + app.get('port'));
 });
 
-var test_bid_url = config.get('Exchange.bidder.url') + querystring.encode({'bidder_id': 1});
+var TEST_BID_URL = config.get('Exchange.bidder.url') + querystring.encode({'bidder_id': 1});
 
 //function generate_test_bid_url(){
 //    // temporary function to generate bunch of test bid URLs
@@ -101,7 +101,7 @@ app.get('/pub', function(request, response){
     6) Sends win-notice via HTTP GET to winning bidder */
 
     //TODO: Add some logic here to figure out how bid urls are retrieved
-    var bid_urls = test_bid_url;
+    var bid_urls = TEST_BID_URL;
 
     // log request, add uuid metadata
     node_utils.logging.log_request(logger,request,
