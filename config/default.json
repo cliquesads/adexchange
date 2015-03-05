@@ -9,8 +9,9 @@
         "host": "130.211.174.124",
         "port": 27017
       },
-      "user": "exchangerw",
-      "pwd": "yb3CSw76Cru8qpUdDP8xxyKLHzZpNRhQG8MNQWoqdKdGPU5miEc4DuU"
+      "user": "exchangereadonly",
+      "pwd": "wiulfGkh9jjqQGCmi50nVPCmw3/KvF1ePYDOuoxXjGMqnf+A9hBsqju218Mp9zK8",
+      "db": "exchange"
     },
     "bidder": {
       "url": "http://localhost:5100/bid?",
