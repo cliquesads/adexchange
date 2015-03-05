@@ -1,7 +1,16 @@
 {
   "Exchange": {
-    "redis": {
-      "rediscloud_url": "redis://rediscloud:yD0AxNUAU7KPyurf@pub-redis-15474.us-east-1-4.2.ec2.garantiadata.com:15474"
+    "mongodb": {
+      "primary": {
+        "host": "146.148.94.184",
+        "port": 27017
+      },
+      "secondary": {
+        "host": "130.211.174.124",
+        "port": 27017
+      },
+      "user": "exchangerw",
+      "pwd": "yb3CSw76Cru8qpUdDP8xxyKLHzZpNRhQG8MNQWoqdKdGPU5miEc4DuU"
     },
     "bidder": {
       "url": "http://localhost:5100/bid?",
