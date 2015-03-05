@@ -72,21 +72,24 @@ app.listen(app.get('port'), function() {
     logger.info("Node app is running at localhost:" + app.get('port'));
 });
 
-function generate_test_bid_urls(num_urls){
-    // temporary function to generate bunch of test bid URLs
-    // TODO REPLACE
-    var bidder_url = config.get('Exchange.bidder.url');
-    var urls = [];
-    for (var i = 0; i < num_urls; i++) {
-        var query = {
-            "bidder_id": Math.round(Math.random() * 10)
-        };
-        urls.push(bidder_url + querystring.encode(query));
-    }
-    return urls;
-}
+var test_bid_url = config.get('Exchange.bidder.url') + querystring.encode({'bidder_id': 1});
 
-app.get('/exchange/test_auction', function(request, response){
+//function generate_test_bid_url(){
+//    // temporary function to generate bunch of test bid URLs
+//    // TODO REPLACE
+//    var bidder_url = config.get('Exchange.bidder.url');
+//    //var urls = [];
+//    //for (var i = 0; i < num_urls; i++) {
+//    var query = {
+//        "bidder_id": 1
+//    };
+//    url = bidder_url + querystring.encode(query);
+//        //urls.push(bidder_url + querystring.encode(query));
+//    //}
+//    return urls;
+//}
+
+app.get('/pub', function(request, response){
     /*  Main function to handle incoming impression requests & respond with winning ad markup.
 
     Does the following, in order:
@@ -98,7 +101,7 @@ app.get('/exchange/test_auction', function(request, response){
     6) Sends win-notice via HTTP GET to winning bidder */
 
     //TODO: Add some logic here to figure out how bid urls are retrieved
-    var bid_urls = generate_test_bid_urls(1);
+    var bid_urls = test_bid_url;
 
     // log request, add uuid metadata
     node_utils.logging.log_request(logger,request,
