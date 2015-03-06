@@ -73,21 +73,6 @@ app.listen(app.get('port'), function() {
 
 var TEST_BID_URL = [config.get('Exchange.bidder.url') + querystring.encode({'bidder_id': 1})];
 
-//function generate_test_bid_url(){
-//    // temporary function to generate bunch of test bid URLs
-//    // TODO REPLACE
-//    var bidder_url = config.get('Exchange.bidder.url');
-//    //var urls = [];
-//    //for (var i = 0; i < num_urls; i++) {
-//    var query = {
-//        "bidder_id": 1
-//    };
-//    url = bidder_url + querystring.encode(query);
-//        //urls.push(bidder_url + querystring.encode(query));
-//    //}
-//    return urls;
-//}
-
 app.get('/pub', function(request, response){
     /*  Main function to handle incoming impression requests & respond with winning ad markup.
 
