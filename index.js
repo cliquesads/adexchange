@@ -1,6 +1,5 @@
 //first-party packages
 var br = require('./lib/bid_requests');
-var db = require('./db');
 var node_utils = require('cliques_node_utils');
 var cliques_cookies = require('./lib/cookies');
 
@@ -72,7 +71,8 @@ app.listen(app.get('port'), function() {
     logger.info("Node app is running at localhost:" + app.get('port'));
 });
 
-var TEST_BID_URL = [config.get('Exchange.bidder.url') + querystring.encode({'bidder_id': 1})];
+var TEST_BID_URL = [config.get('Exchange.bidder.url') + querystring.encode({'bidder_id': 1}),
+                    config.get('Exchange.bidder.url') + querystring.encode({'bidder_id': 2})];
 
 //function generate_test_bid_url(){
 //    // temporary function to generate bunch of test bid URLs
@@ -112,44 +112,36 @@ app.get('/pub', function(request, response){
     // TODO: this error handling is a mess, should be able to be simplified into
     // TODO: one wrapper try/catch but I can't get it to work
     try {
-        db.getPublisherData(request, function(err, pub_data) {
+        br.get_bids(bid_urls, request, logger, function (err, result) {
             if (err) throw err;
-            // Add pub_data from DB onto request object for now so you don't have
-            // to pass around pub_data object in bid request library.  Don't know
-            // if this is great long-term but works for now.
-            request.pub_data = pub_data;
-
-            br.get_bids(bid_urls, request, logger, function (err, result) {
-                if (err) throw err;
-                br.run_auction(result, function (er, winning_bid) {
-                    //this doesn't really work as expected, not throwing and being caught by
-                    //try clause
-                    if (er) {
-                        //throw er;
-                        br.handle_default_condition(request, response);
-                        logger.error(er);
-                        return
-                    }
-                    response.status(200).json(winning_bid);
-                    var auction_meta = {
-                        bidobj__id: winning_bid.bidobj__id,
-                        bidobj__bidid: winning_bid.bidobj__bidid,
-                        bidid: winning_bid.id,
-                        impid: winning_bid.impid,
-                        adid: winning_bid.adid,
-                        bid1: winning_bid.price,
-                        clearprice: winning_bid.clearprice
+            br.run_auction(result, function (er, winning_bid) {
+                //this doesn't really work as expected, not throwing and being caught by
+                //try clause
+                if (er) {
+                    //throw er;
+                    br.handle_default_condition(request, response);
+                    logger.error(er);
+                    return
+                }
+                response.status(200).json(winning_bid);
+                var auction_meta = {
+                    bidobj__id: winning_bid.bidobj__id,
+                    bidobj__bidid: winning_bid.bidobj__bidid,
+                    bidid: winning_bid.id,
+                    impid: winning_bid.impid,
+                    adid: winning_bid.adid,
+                    bid1: winning_bid.price,
+                    clearprice: winning_bid.clearprice
+                };
+                node_utils.logging.log_response(logger, response, auction_meta);
+                br.send_win_notice(winning_bid, function (err, nurl, response) {
+                    if (err) throw err;
+                    var win_notice_meta = {
+                        type: 'win-notice',
+                        nurl: nurl,
+                        statusCode: response.statusCode
                     };
-                    node_utils.logging.log_response(logger, response, auction_meta);
-                    br.send_win_notice(winning_bid, function (err, nurl, response) {
-                        if (err) throw err;
-                        var win_notice_meta = {
-                            type: 'win-notice',
-                            nurl: nurl,
-                            statusCode: response.statusCode
-                        };
-                        logger.info("WIN-NOTICE", win_notice_meta);
-                    });
+                    logger.info("WIN-NOTICE", win_notice_meta);
                 });
             });
         });
@@ -164,11 +156,7 @@ app.get('/rtb_test', function(request, response){
     // fake the referer address just for show in the request data object
     request.headers.referer = 'http://' + request.headers['host'] + request.originalUrl;
     // generate request data again just for show
-    request.query = {
-        "h": 250 || request.query.h,
-        "w": 300 || request.query.w,
-        "pos": 0 || request.query.pos
-    };
+    request.query = {"tag_id": "54f8df2e6bcc85d9653becfb"};
     var qs = querystring.encode(request.query);
     br._create_single_imp_bid_request(request,function(err,request_data){
         var fn = jade.compileFile('./templates/rtb_test.jade', null);
