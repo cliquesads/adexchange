@@ -71,8 +71,7 @@ app.listen(app.get('port'), function() {
     logger.info("Node app is running at localhost:" + app.get('port'));
 });
 
-var TEST_BID_URL = [config.get('Exchange.bidder.url') + querystring.encode({'bidder_id': 1}),
-                    config.get('Exchange.bidder.url') + querystring.encode({'bidder_id': 2})];
+var TEST_BID_URL = [config.get('Exchange.bidder.url') + querystring.encode({'bidder_id': 1})];
 
 //function generate_test_bid_url(){
 //    // temporary function to generate bunch of test bid URLs
