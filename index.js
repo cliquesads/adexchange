@@ -20,7 +20,6 @@ var responseTime = require('response-time');
 var config = require('config');
 
 //TODO: invocation-tags (client-side shit),
-//TODO: figure out pub tag taxonomy,
 //TODO: unit tests (some simple ones)
 
 /*  BEGIN logging setup     */
