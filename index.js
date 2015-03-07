@@ -7,6 +7,7 @@ var cliques_cookies = require('./lib/cookies');
 var pmx = require('pmx').init();
 
 //third-party packages
+var http = require('http').globalAgent.maxSockets = Infinity;
 var express = require('express');
 var app = express();
 var querystring = require('querystring');
@@ -36,13 +37,13 @@ var logger = new (winston.Logger)({
 });
 /*  END Logging setup   */
 
-// Only enable Nodetime in local test env
-if (process.env.NODE_ENV == 'local-test'){
-    require('nodetime').profile({
-        accountKey: config.get('Exchange.nodetime.license_key'),
-        appName: config.get('Exchange.nodetime.appName')
-    });
-}
+//// Only enable Nodetime in local test env
+//if (process.env.NODE_ENV == 'local-test'){
+//    require('nodetime').profile({
+//        accountKey: config.get('Exchange.nodetime.license_key'),
+//        appName: config.get('Exchange.nodetime.appName')
+//    });
+//}
 
 /*  BEGIN EXPRESS MIDDLEWARE    */
 
