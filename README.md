@@ -42,14 +42,38 @@ $ pm2 start index.js --name adexchange -i 0 # this will run the exchange on all 
 
 # Issues
 
-At the moment, running on Node 0.10.x, there is an issue at high levels of concurrency where Node will throw the error:
+At the moment, running on Node 0.12.0, there is an issue at high levels of concurrency where Node will throw the error:
 
 ```
 error:  Error: connect EADDRNOTAVAIL
 ```
 
-This seems to be caused by a shortage of sockets available for connection.  This might be fixed  
+This seems to be caused by a shortage of sockets available for connection.  Supposedly, the global HTTP Agent `maxSockets` setting in previous node versions (0.10.x) was set to 5 by default, which various online sources have cited as a common source for this issue:
 
+[LinkedIn Engineering Blog](http://engineering.linkedin.com/nodejs/blazing-fast-nodejs-10-performance-tips-linkedin-mobile)
+[WebAppLog - Seven Things You Should Stop Doing with Node](http://webapplog.com/seven-things-you-should-stop-doing-with-node-js/)
+[StackOverflow Post 1](http://stackoverflow.com/questions/21859537/connect-eaddrnotavail-in-nodejs-under-high-load-how-to-faster-free-or-reuse-tc)
+
+## UPDATE
+This seems to be a system issue with the number of local ports made available.  By default, Ubuntu 12.04 in GCE sets local port range to `32768	61000`, giving you 28,232 local ports to work with.
+
+To check, run:
+
+```
+cat /proc/sys/net/ipv4/ip_local_port_range
+```
+
+Or:
+
+```
+sysctl net.ipv4.ip_local_port_range
+```
+
+Not sure of the reasoning behind this, but under heavy load this will cause outbound HTTP requests to fail due to lack of ports available.  I've increased this range on one machine to:
+
+```
+1024    65535
+```
 
 # Key Dependencies
 
