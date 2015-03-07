@@ -1,13 +1,15 @@
 #!/bin/bash
 
 #system deps
-sudo apt-get install python-software-properties
-sudo apt-add-repository ppa:chris-lea/node.js
+#sudo apt-get install python-software-properties
+#sudo apt-add-repository ppa:chris-lea/node.js #OLD
 sudo apt-get update
 sudo apt-get install gcc make build-essential
-sudo install nodejs
+source ~/.nvm/nvm.sh
+nvm install 0.12.0
 
 #install node dependencies
+npm update
 npm install
 #have to install pm2 globally
 sudo npm install pm2 -g --unsafe-perm

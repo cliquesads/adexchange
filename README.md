@@ -40,6 +40,17 @@ $ source activate_production.sh
 $ pm2 start index.js --name adexchange -i 0 # this will run the exchange on all available CPU's
 ```
 
+# Issues
+
+At the moment, running on Node 0.10.x, there is an issue at high levels of concurrency where Node will throw the error:
+
+```
+error:  Error: connect EADDRNOTAVAIL
+```
+
+This seems to be caused by a shortage of sockets available for connection.  This might be fixed  
+
+
 # Key Dependencies
 
 ## Geo Lookup
