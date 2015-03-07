@@ -42,7 +42,7 @@ $ pm2 start index.js --name adexchange -i 0 # this will run the exchange on all 
 
 # Issues
 
-At the moment, running on Node 0.12.0, there is an issue at high levels of concurrency where Node will throw the error:
+There can be an issue running on Node 0.12.0 at high levels of concurrency where Node will throw the error:
 
 ```
 error:  Error: connect EADDRNOTAVAIL
