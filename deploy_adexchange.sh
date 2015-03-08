@@ -3,8 +3,16 @@
 source ./activate_production.sh
 npm install
 
-processname='adexchange'
+if [ ! -d $HOME"/repositories/cliques-config" ]; then
+    git clone git@github.com:cliquesads/cliques-config.git ../cliques-config
+    ln -s ../cliques-config config
+else
+    cd ../cliques-config
+    git pull
+    cd ../adexchange
+fi
 
+processname='adexchange'
 running=$(pm2 list -m | grep "$processname")
 
 if [ -z "$running" ]; then
