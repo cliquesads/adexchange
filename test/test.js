@@ -6,7 +6,7 @@ process.env.NODE_ENV = 'test';
 
 describe('Second Price Auction', function(){
     describe('MultiSeatBids', function(){
-        it("should return highest bid as the winner, with clearprice of second highest bid + $0.01", function () {
+        it("Should return highest bid as the winner, with clearprice of second highest bid + $0.01", function () {
             var test_bids_single_obj = [
                 {
                     "id": "7367a940-c526-11e4-9d22-a5269bd04333", "bidid": 2029191609, "cur": "USD", "seatbid": [{
@@ -30,7 +30,7 @@ describe('Second Price Auction', function(){
         });
     });
     describe('MultiBidObjects', function(){
-        it("should return highest bid as the winner, with clearprice of second highest bid + $0.01", function () {
+        it("Should return highest bid as the winner, with clearprice of second highest bid + $0.01", function () {
             var test_bids_multi_obj = [
                 {"id": "268bd720-c528-11e4-8524-6fd57e6c05e5","bidid": 54156237771,"cur": "USD","seatbid":
                     [{"seat": 8475,"bid": [{"id": 86422736,"impid": "231159286491452","price": 3.95}]}]
@@ -62,13 +62,26 @@ describe('Second Price Auction', function(){
     });
 });
 
-process.env['EXCHANGE-WEBSERVER-PORT'] = 5200;
 var index = require('../index');
-var app = index.app;
+
+describe('MongoDB', function(){
+    it('Can connect to database: exchange', function(done){
+        var mongoose = require('mongoose');
+        db = mongoose.createConnection(index.mongoURI, index.mongoOptions);
+        db.on('connected', function(){
+            done();
+        });
+        db.on('error', function(err){
+            done(err);
+        })
+    });
+});
 
 describe('WebServer', function(){
     //UUID value on incoming request gets propagated to request object for downstream processing
     //var req = {cookies: {uuid: "cc820770-c1e6-11e4-b7ba-e977f4853d86"}};
+    process.env['EXCHANGE-WEBSERVER-PORT'] = 5200;
+    var app = index.app;
     describe('GET /pub', function(){
         it("responds JSON (200)", function(done){
             supertest(app)
