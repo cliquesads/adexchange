@@ -62,18 +62,19 @@ app.use(cliques_cookies.get_or_set_uuid);
 /*  END EXPRESS MIDDLEWARE  */
 
 /*  HTTP Endpoints  */
-app.get('/', function(request, response) {
-    response.send('Welcome to the Cliques Ad Exchange');
-});
 
 app.listen(app.get('port'), function() {
-    logger.info("Node app is running at localhost:" + app.get('port'));
+    logger.info("Cliques Ad Exchange is running at localhost:" + app.get('port'));
+});
+
+app.get('/', function(request, response) {
+    response.send('Welcome to the Cliques Ad Exchange');
 });
 
 var TEST_BID_URL = [config.get('Exchange.bidder.url') + querystring.encode({'bidder_id': 1})];
 
 function default_condition(error, request, response){
-    // TODO: probably make a DB call here to get default
+    // TODO: make a DB call here to get default
     response.json({"adm": config.get('Exchange.defaultcondition.300x250'), "default": true}).status(200);
     logger.error(error, request);
 }
