@@ -70,7 +70,15 @@ app.listen(app.get('port'), function() {
     logger.info("Node app is running at localhost:" + app.get('port'));
 });
 
-var TEST_BID_URL = [config.get('Exchange.bidder.url') + querystring.encode({'bidder_id': 1})];
+var TEST_BID_URL = [
+    config.get('Exchange.bidder.url') + querystring.encode({'bidder_id': 1}),
+    config.get('Exchange.bidder.url') + querystring.encode({'bidder_id': 2}),
+    config.get('Exchange.bidder.url') + querystring.encode({'bidder_id': 3}),
+    config.get('Exchange.bidder.url') + querystring.encode({'bidder_id': 4}),
+    config.get('Exchange.bidder.url') + querystring.encode({'bidder_id': 5}),
+    config.get('Exchange.bidder.url') + querystring.encode({'bidder_id': 6}),
+    config.get('Exchange.bidder.url') + querystring.encode({'bidder_id': 7})
+];
 
 app.get('/pub', function(request, response){
     /*  Main function to handle incoming impression requests & respond with winning ad markup.

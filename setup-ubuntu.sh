@@ -11,8 +11,9 @@ nvm install 0.12.0
 #install node dependencies
 npm update
 npm install
-#have to install pm2 globally
+#have to install pm2 & mocha globally
 sudo npm install pm2 -g --unsafe-perm
+sudo npm install mocha -g
 
 #clone config repo and make symlink
 git clone git@github.com:cliquesads/cliques-config.git ../cliques-config
