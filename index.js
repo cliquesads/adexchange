@@ -2,11 +2,11 @@
 var br = require('./lib/bid_requests');
 var node_utils = require('cliques_node_utils');
 var cliques_cookies = require('./lib/cookies');
-
-//have to require PMX before express to enable monitoring
-var pmx = require('pmx').init();
+var db = require('./lib/db');
 
 //third-party packages
+//have to require PMX before express to enable monitoring
+var pmx = require('pmx').init();
 var express = require('express');
 var app = express();
 var querystring = require('querystring');
@@ -19,10 +19,13 @@ var cookieParser = require('cookie-parser');
 var responseTime = require('response-time');
 var config = require('config');
 
+/* -------------------  NOTES ------------------- */
+
 //TODO: invocation-tags (client-side shit),
 //TODO: unit tests (some simple ones)
 
-/*  BEGIN logging setup     */
+/* -------------------  LOGGING ------------------- */
+
 var logfile = path.join(
     process.env['HOME'],
     'logs',
@@ -42,7 +45,7 @@ if (process.env.NODE_ENV != 'test'){
     });
 }
 
-/*  END Logging setup   */
+/* -------------------  DEBUGGING/PROFILING ------------------- */
 
 //// Only enable Nodetime in local test env
 //if (process.env.NODE_ENV == 'local-test'){
@@ -52,7 +55,22 @@ if (process.env.NODE_ENV != 'test'){
 //    });
 //}
 
-/*  BEGIN EXPRESS MIDDLEWARE    */
+/* ------------------- MONGODB ------------------- */
+
+// Build the connection string
+var dbURI = util.format('mongodb://%s:%s/%s',
+    config.get('Exchange.mongodb.secondary.host'),
+    config.get('Exchange.mongodb.secondary.port'),
+    config.get('Exchange.mongodb.db'));
+
+var options = {
+    user: config.get('Exchange.mongodb.user'),
+    pass: config.get('Exchange.mongodb.pwd'),
+    auth: {authenticationDatabase: config.get('Exchange.mongodb.db')}
+};
+db.mongoConnect(dbURI, options, logger);
+
+/* ------------------- EXPRESS MIDDLEWARE ------------------- */
 
 // inside request-ip middleware handler
 app.use(function(req, res, next) {
@@ -67,9 +85,7 @@ app.use(express.static(__dirname + '/public'));
 // custom cookie-parsing middleware
 app.use(cliques_cookies.get_or_set_uuid);
 
-/*  END EXPRESS MIDDLEWARE  */
-
-/*  HTTP Endpoints  */
+/*  ------------------- HTTP Endpoints  ------------------- */
 
 app.listen(app.get('port'), function() {
     logger.info("Cliques Ad Exchange is running at localhost:" + app.get('port'));
