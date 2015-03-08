@@ -5,7 +5,11 @@
 #sudo apt-add-repository ppa:chris-lea/node.js #OLD
 sudo apt-get update
 sudo apt-get install gcc make build-essential
-source ~/.nvm/nvm.sh
+
+#download NVM and install NVM & node
+curl https://raw.githubusercontent.com/creationix/nvm/v0.24.0/install.sh | bash
+mv $HOME/.nvm .nvm
+source ./.nvm/nvm.sh
 nvm install 0.12.0
 
 #install node dependencies
