@@ -85,12 +85,18 @@ describe('WebServer', function(){
     //UUID value on incoming request gets propagated to request object for downstream processing
     //var req = {cookies: {uuid: "cc820770-c1e6-11e4-b7ba-e977f4853d86"}};
     var app = index.app;
+    describe('GET /', function() {
+        it("Responds with 200", function (done) {
+            supertest(app)
+                .get('/')
+                .expect(200, done)
+        });
+    });
     describe('GET /pub', function(){
-        it("responds JSON (200)", function(done){
+        it("Responds with 404", function(done){
             supertest(app)
                 .get('/pub')
-                .expect('Content-Type', /json/)
-                .expect(200, done)
+                .expect(404, done)
         });
     })
 });
