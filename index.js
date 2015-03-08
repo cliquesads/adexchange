@@ -53,7 +53,7 @@ app.use(function(req, res, next) {
 });
 app.use(cookieParser());
 app.use(responseTime());
-app.set('port', (config.get('Exchange.http.port') || 5000));
+app.set('port', (process.env['EXCHANGE-WEBSERVER-PORT'] || config.get('Exchange.http.port') || 5000));
 app.use(express.static(__dirname + '/public'));
 
 // custom cookie-parsing middleware
@@ -70,15 +70,7 @@ app.listen(app.get('port'), function() {
     logger.info("Node app is running at localhost:" + app.get('port'));
 });
 
-var TEST_BID_URL = [
-    config.get('Exchange.bidder.url') + querystring.encode({'bidder_id': 1}),
-    config.get('Exchange.bidder.url') + querystring.encode({'bidder_id': 2}),
-    config.get('Exchange.bidder.url') + querystring.encode({'bidder_id': 3}),
-    config.get('Exchange.bidder.url') + querystring.encode({'bidder_id': 4}),
-    config.get('Exchange.bidder.url') + querystring.encode({'bidder_id': 5}),
-    config.get('Exchange.bidder.url') + querystring.encode({'bidder_id': 6}),
-    config.get('Exchange.bidder.url') + querystring.encode({'bidder_id': 7})
-];
+var TEST_BID_URL = [config.get('Exchange.bidder.url') + querystring.encode({'bidder_id': 1})];
 
 app.get('/pub', function(request, response){
     /*  Main function to handle incoming impression requests & respond with winning ad markup.
@@ -104,7 +96,12 @@ app.get('/pub', function(request, response){
     // TODO: one wrapper try/catch but I can't get it to work
     try {
         br.get_bids(bid_urls, request, logger, function (err, result) {
-            if (err) throw err;
+            if (err) {
+                //throw er;
+                br.handle_default_condition(request, response);
+                logger.error(err);
+                return
+            }
             br.run_auction(result, function (er, winning_bid) {
                 //this doesn't really work as expected, not throwing and being caught by
                 //try clause
@@ -157,3 +154,6 @@ app.get('/rtb_test', function(request, response){
         node_utils.logging.log_response(logger, response);
     });
 });
+
+// Export app for unit testing
+exports.app = app;
