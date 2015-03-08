@@ -72,6 +72,12 @@ app.listen(app.get('port'), function() {
 
 var TEST_BID_URL = [config.get('Exchange.bidder.url') + querystring.encode({'bidder_id': 1})];
 
+function default_condition(error, request, response){
+    // TODO: probably make a DB call here to get default
+    response.json({"adm": config.get('Exchange.defaultcondition.300x250'), "default": true}).status(200);
+    logger.error(error, request);
+}
+
 app.get('/pub', function(request, response){
     /*  Main function to handle incoming impression requests & respond with winning ad markup.
 
@@ -83,7 +89,6 @@ app.get('/pub', function(request, response){
     5) Logs response w/ winning bid metadata
     6) Sends win-notice via HTTP GET to winning bidder */
 
-
     //TODO: Add some logic here to figure out how bid urls are retrieved
     var bid_urls = TEST_BID_URL;
 
@@ -91,52 +96,38 @@ app.get('/pub', function(request, response){
     node_utils.logging.log_request(logger,request,
         { 'req_uuid':request.old_uuid, 'uuid': request.uuid });
 
-    // now do the hard stuff
-    // TODO: this error handling is a mess, should be able to be simplified into
-    // TODO: one wrapper try/catch but I can't get it to work
-    try {
-        br.get_bids(bid_urls, request, logger, function (err, result) {
-            if (err) {
-                //throw er;
-                br.handle_default_condition(request, response);
-                logger.error(err);
-                return
-            }
-            br.run_auction(result, function (er, winning_bid) {
-                //this doesn't really work as expected, not throwing and being caught by
-                //try clause
-                if (er) {
-                    //throw er;
-                    br.handle_default_condition(request, response);
-                    logger.error(er);
+    // now do the hard stuff (1. Get bids, 2. Run auction, send response, 3. send win notice)
+    br.get_bids(bid_urls, request, logger, function (e, result) {
+        if (e) return default_condition(e, request, response);
+
+        br.run_auction(result, function (er, winning_bid) {
+            if (er) return default_condition(er, request, response);
+
+            response.status(200).json(winning_bid);
+            var auction_meta = {
+                bidobj__id: winning_bid.bidobj__id,
+                bidobj__bidid: winning_bid.bidobj__bidid,
+                bidid: winning_bid.id,
+                impid: winning_bid.impid,
+                adid: winning_bid.adid,
+                bid1: winning_bid.price,
+                clearprice: winning_bid.clearprice
+            };
+            node_utils.logging.log_response(logger, response, auction_meta);
+            br.send_win_notice(winning_bid, function (err, nurl, response) {
+                if (err) {
+                    logger.error(err);
                     return
                 }
-                response.status(200).json(winning_bid);
-                var auction_meta = {
-                    bidobj__id: winning_bid.bidobj__id,
-                    bidobj__bidid: winning_bid.bidobj__bidid,
-                    bidid: winning_bid.id,
-                    impid: winning_bid.impid,
-                    adid: winning_bid.adid,
-                    bid1: winning_bid.price,
-                    clearprice: winning_bid.clearprice
+                var win_notice_meta = {
+                    type: 'win-notice',
+                    nurl: nurl,
+                    statusCode: response.statusCode
                 };
-                node_utils.logging.log_response(logger, response, auction_meta);
-                br.send_win_notice(winning_bid, function (err, nurl, response) {
-                    if (err) throw err;
-                    var win_notice_meta = {
-                        type: 'win-notice',
-                        nurl: nurl,
-                        statusCode: response.statusCode
-                    };
-                    logger.info("WIN-NOTICE", win_notice_meta);
-                });
+                logger.info("WIN-NOTICE", win_notice_meta);
             });
         });
-    } catch (e){
-        br.handle_default_condition(request, response);
-        logger.error(e);
-    }
+    });
 });
 
 //RTB Test page, just a placeholder
