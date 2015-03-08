@@ -104,7 +104,7 @@ var TEST_BID_URL = [config.get('Exchange.bidder.url') + querystring.encode({'bid
 function default_condition(error, request, response){
     // TODO: make a DB call here to get default
     response.json({"adm": config.get('Exchange.defaultcondition.300x250'), "default": true}).status(200);
-    logger.error(error, request);
+    logger.error(error);
 }
 
 app.get('/pub', function(request, response){
@@ -124,6 +124,13 @@ app.get('/pub', function(request, response){
     // log request, add uuid metadata
     node_utils.logging.log_request(logger,request,
         { 'req_uuid':request.old_uuid, 'uuid': request.uuid });
+
+    // first check if incoming request has necessary query params
+    if (!request.query.hasOwnProperty('tag_id')){
+        response.status(404).send("ERROR 404: Page not found - no tag_id parameter provided.");
+        logger.error('GET Request sent to /pub with no tag_id');
+        return
+    }
 
     // now do the hard stuff (1. Get bids, 2. Run auction, send response, 3. send win notice)
     br.get_bids(bid_urls, request, logger, function (e, result) {
