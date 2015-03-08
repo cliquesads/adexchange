@@ -35,9 +35,7 @@ First, make sure the repository is cloned into the appropriate directory. Then:
 
 ```
 $ git pull
-$ npm install #install any dependencies
-$ source activate_production.sh
-$ pm2 start index.js --name adexchange -i 0 # this will run the exchange on all available CPU's
+$ ./deploy_production.sh
 ```
 
 # Issues
