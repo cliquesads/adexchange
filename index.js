@@ -31,6 +31,9 @@ var logfile = path.join(
     'logs',
     util.format('adexchange_%s.log',node_utils.dates.isoFormatUTCNow())
 );
+
+var devNullLogger = logger = new (winston.Logger)({transports: []});
+
 if (process.env.NODE_ENV != 'test'){
     var logger = new (winston.Logger)({
         transports: [
@@ -40,9 +43,7 @@ if (process.env.NODE_ENV != 'test'){
     });
 } else {
     // just for running unittests so whole HTTP log isn't written to console
-    logger = new (winston.Logger)({
-        transports: []
-    });
+    logger = devNullLogger;
 }
 
 /* -------------------  DEBUGGING/PROFILING ------------------- */
@@ -58,17 +59,20 @@ if (process.env.NODE_ENV != 'test'){
 /* ------------------- MONGODB ------------------- */
 
 // Build the connection string
-var dbURI = util.format('mongodb://%s:%s/%s',
+var mongoURI = util.format('mongodb://%s:%s/%s',
     config.get('Exchange.mongodb.secondary.host'),
     config.get('Exchange.mongodb.secondary.port'),
     config.get('Exchange.mongodb.db'));
 
-var options = {
+var mongoOptions = {
     user: config.get('Exchange.mongodb.user'),
     pass: config.get('Exchange.mongodb.pwd'),
     auth: {authenticationDatabase: config.get('Exchange.mongodb.db')}
 };
-db.mongoConnect(dbURI, options, logger);
+db.mongoConnect(mongoURI, mongoOptions, function(err, logstring){
+    if (err) throw err;
+    logger.info(logstring);
+});
 
 /* ------------------- EXPRESS MIDDLEWARE ------------------- */
 
@@ -171,5 +175,9 @@ app.get('/rtb_test', function(request, response){
     });
 });
 
-// Export app for unit testing
+/* ------------------- EXPORTS mostly just for unittesting ------------------- */
+
 exports.app = app;
+exports.mongoURI = mongoURI;
+exports.mongoOptions = mongoOptions;
+exports.devNullLogger = devNullLogger;
