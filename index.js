@@ -28,12 +28,20 @@ var logfile = path.join(
     'logs',
     util.format('adexchange_%s.log',node_utils.dates.isoFormatUTCNow())
 );
-var logger = new (winston.Logger)({
-    transports: [
-        new (winston.transports.Console)({timestamp:true}),
-        new (winston.transports.File)({filename:logfile,timestamp:true})
-    ]
-});
+if (process.env.NODE_ENV != 'test'){
+    var logger = new (winston.Logger)({
+        transports: [
+            new (winston.transports.Console)({timestamp:true}),
+            new (winston.transports.File)({filename:logfile,timestamp:true})
+        ]
+    });
+} else {
+    // just for running unittests so whole HTTP log isn't written to console
+    logger = new (winston.Logger)({
+        transports: []
+    });
+}
+
 /*  END Logging setup   */
 
 //// Only enable Nodetime in local test env

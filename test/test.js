@@ -2,6 +2,8 @@ var assert = require("assert");
 var br = require('../lib/bid_requests');
 var supertest = require('supertest');
 
+process.env.NODE_ENV = 'test';
+
 describe('Second Price Auction', function(){
     describe('MultiSeatBids', function(){
         it("should return highest bid as the winner, with clearprice of second highest bid + $0.01", function () {
@@ -68,11 +70,11 @@ describe('WebServer', function(){
     //UUID value on incoming request gets propagated to request object for downstream processing
     //var req = {cookies: {uuid: "cc820770-c1e6-11e4-b7ba-e977f4853d86"}};
     describe('GET /pub', function(){
-        it("responds JSON (200)", function(done) {
+        it("responds JSON (200)", function(done){
             supertest(app)
                 .get('/pub')
                 .expect('Content-Type', /json/)
-                .expect('200', done)
+                .expect(200, done)
         });
     })
 });
