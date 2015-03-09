@@ -6,6 +6,8 @@ Handles incoming requests for impressions, runs real-time auctions from remote b
 
 All requests and responses follow [OpenRTB 2.3](https://github.com/openrtb/OpenRTB) protocols.
 
+# Development
+
 ## Running Locally
 
 First, make sure you have [Node.js](http://nodejs.org/) installed.
@@ -29,14 +31,71 @@ $ npm install --save some-library
 
 This way, the dependency will be added to "dependencies" in package.json.
 
-## Running in Production
+# Running in Production
 
-First, make sure the repository is cloned into the appropriate directory. Then:
+## 0. Setup New Machine
 
+If deploying to a new machine, you first need to run the Setup script to install dependencies (nvm, node, npm, pm2, mocha).
+
+Right now, there is only one setup script designed for Ubuntu 12.04.
+
+```sh
+$ cd ~/repositories
+$ git clone git@github.com:cliquesads/adexchange.git # or clone your own fork
+$ cd adexchange
+$ ./setup_ubuntu.sh # runs the setup script, should install new dependencies
 ```
+
+## 1. Pull
+
+```sh
+$ cd ~/repositories/adexchange
 $ git pull
+```
+
+## 2. Tests
+
+Run unittests with [Mocha] (http://mochajs.org/). Simply type:
+
+```sh
+$ mocha
+```
+
+OR
+
+```sh
+$ npm test
+```
+
+If all tests pass, you can move on to:
+
+## 3. Deployment
+
+```sh
 $ ./deploy_production.sh
 ```
+
+
+# Key Dependencies
+
+## Geo Lookup
+
+IP-Geo lookup is handled by MaxMind using their paying [GeoIP2 City Database binary](https://www.maxmind.com/en/geoip2-city), and [node-maxmind](https://github.com/runk/node-maxmind), the pure JS API for this database.
+
+Currently, you must use the "legacy" `GeoIPCity.dat` binary, as the newer GeoIP2 `.mmdb` files are not yet supported by node-maxmind.
+
+### IMPORTANT
+
+The database file needs to be stored in `~/data/maxmind/GeoIPCity.dat`, otherwise the server will crash immediately.
+
+## User-Agent Parsing
+
+This is handled by a combination of [ua-parser2](https://github.com/commenthol/ua-parser2) and [mobile-detect](https://github.com/hgoebl/mobile-detect.js).
+
+ua-parser2 was chosen because it is based on the most widely-used user-agent parsing regex collection out there, [ua-parser](https://github.com/tobie/ua-parser).  There are some other js libraries to handle this task, but I think this is the most robust.
+
+mobile-detect is only used to discern between phone and tablet user-agent strings at the `devicetype` level, which is not a trivial task.  It is only invoked if the devicetype is determined to be mobile, it never gets called for desktops.
+
 
 # Issues
 
@@ -72,23 +131,3 @@ Not sure of the reasoning behind this, but under heavy load this will cause outb
 ```
 1024    65535
 ```
-
-# Key Dependencies
-
-## Geo Lookup
-
-IP-Geo lookup is handled by MaxMind using their paying [GeoIP2 City Database binary](https://www.maxmind.com/en/geoip2-city), and [node-maxmind](https://github.com/runk/node-maxmind), the pure JS API for this database.
-
-Currently, you must use the "legacy" `GeoIPCity.dat` binary, as the newer GeoIP2 `.mmdb` files are not yet supported by node-maxmind.
-
-### IMPORTANT
-
-The database file needs to be stored in `~/data/maxmind/GeoIPCity.dat`, otherwise the server will crash immediately.
-
-## User-Agent Parsing
-
-This is handled by a combination of [ua-parser2](https://github.com/commenthol/ua-parser2) and [mobile-detect](https://github.com/hgoebl/mobile-detect.js).
-
-ua-parser2 was chosen because it is based on the most widely-used user-agent parsing regex collection out there, [ua-parser](https://github.com/tobie/ua-parser).  There are some other js libraries to handle this task, but I think this is the most robust.
-
-mobile-detect is only used to discern between phone and tablet user-agent strings at the `devicetype` level, which is not a trivial task.  It is only invoked if the devicetype is determined to be mobile, it never gets called for desktops.
