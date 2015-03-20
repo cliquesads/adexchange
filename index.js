@@ -99,7 +99,7 @@ app.get('/', function(request, response) {
     response.send('Welcome to the Cliques Ad Exchange');
 });
 
-var TEST_BID_URL = [config.get('Exchange.bidder.url') + querystring.encode({'bidder_id': 1})];
+var TEST_BID_URL = [config.get('Exchange.bidder.url')]; //+ querystring.encode({'bidder_id': 1})];
 
 function default_condition(error, request, response){
     // TODO: make a DB call here to get default
