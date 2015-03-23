@@ -104,7 +104,11 @@ var TEST_BID_URL = [config.get('Exchange.bidder.url')]; //+ querystring.encode({
 function default_condition(error, request, response){
     // TODO: make a DB call here to get default
     response.json({"adm": config.get('Exchange.defaultcondition.300x250'), "default": true}).status(200);
-    logger.error(error);
+    if (error.constructor === {}.constructor){
+        logger.error(JSON.stringify(error, null, 2));
+    } else {
+        logger.error(error);
+    }
 }
 
 app.get('/pub', function(request, response){
