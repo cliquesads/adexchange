@@ -144,6 +144,7 @@ app.get('/pub', function(request, response){
             if (er) return default_condition(er, request, response);
 
             response.status(200).json(winning_bid);
+            logger.info("Winning bid: " + JSON.stringify(winning_bid, null, 2));
             var auction_meta = {
                 bidobj__id: winning_bid.bidobj__id,
                 bidobj__bidid: winning_bid.bidobj__bidid,
