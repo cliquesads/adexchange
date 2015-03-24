@@ -154,7 +154,7 @@ app.get('/pub', function(request, response){
                 clearprice: winning_bid.clearprice
             };
             node_utils.logging.log_response(logger, response, auction_meta);
-            br.send_win_notice(winning_bid, function (err, nurl, response) {
+            br.send_win_notice(winning_bid, request.uuid, function (err, nurl, response, body) {
                 if (err) {
                     logger.error(err);
                     return
