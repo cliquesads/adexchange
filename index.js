@@ -166,6 +166,12 @@ app.get('/pub', function(request, response){
                     statusCode: response.statusCode
                 };
                 logger.info("WIN-NOTICE", win_notice_meta);
+                if (response.statusCode != 200){
+                    logger.error('HTTP Error on win notice, Status Code ' + response.statusCode + ': ' + body);
+                    if (body.constructor === {}.constructor){
+                        logger.error(JSON.stringify(body, null, 2));
+                    }
+                }
             });
         });
     });
