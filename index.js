@@ -2,7 +2,7 @@
 var br = require('./lib/bid_requests');
 var node_utils = require('cliques_node_utils');
 var cliques_cookies = node_utils.cookies;
-var db = require('./lib/db');
+var db = node_utils.mongodb;
 
 //third-party packages
 //have to require PMX before express to enable monitoring
@@ -56,7 +56,7 @@ if (process.env.NODE_ENV != 'test'){
 //    });
 //}
 
-/* ------------------- MONGODB ------------------- */
+/* ------------------- MONGODB - EXCHANGE DB ------------------- */
 
 // Build the connection string
 var mongoURI = util.format('mongodb://%s:%s/%s',
@@ -69,7 +69,7 @@ var mongoOptions = {
     pass: config.get('Exchange.mongodb.pwd'),
     auth: {authenticationDatabase: config.get('Exchange.mongodb.db')}
 };
-db.mongoConnect(mongoURI, mongoOptions, function(err, logstring){
+var EXCHANGE_CONNECTION = db.createConnectionWrapper(mongoURI, mongoOptions, function(err, logstring){
     if (err) throw err;
     logger.info(logstring);
 });
@@ -137,7 +137,7 @@ app.get('/pub', function(request, response){
     }
 
     // now do the hard stuff (1. Get bids, 2. Run auction, send response, 3. send win notice)
-    br.get_bids(bid_urls, request, logger, function (e, result) {
+    br.get_bids(bid_urls, request, logger, EXCHANGE_CONNECTION, function (e, result) {
         if (e) return default_condition(e, request, response);
 
         br.run_auction(result, function (er, winning_bid) {
@@ -184,7 +184,7 @@ app.get('/rtb_test', function(request, response){
     // generate request data again just for show
     request.query = {"tag_id": "54f8df2e6bcc85d9653becfb"};
     var qs = querystring.encode(request.query);
-    br._create_single_imp_bid_request(request,function(err,request_data){
+    br._create_single_imp_bid_request(request,EXCHANGE_CONNECTION,function(err,request_data){
         var fn = jade.compileFile('./templates/rtb_test.jade', null);
         var html = fn({request_data: JSON.stringify(request_data, null, 2), qs: qs});
         node_utils.logging.log_request(logger, request);
