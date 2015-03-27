@@ -1,7 +1,7 @@
 //first-party packages
 var br = require('./lib/bid_requests');
 var node_utils = require('cliques_node_utils');
-var cliques_cookies = require('./lib/cookies');
+var cliques_cookies = node_utils.cookies;
 var db = require('./lib/db');
 
 //third-party packages
