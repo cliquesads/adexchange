@@ -89,6 +89,12 @@ app.use(express.static(__dirname + '/public'));
 // custom cookie-parsing middleware
 app.use(cliques_cookies.get_or_set_uuid);
 
+/* --------------------- AUCTIONEER -----------------------*/
+
+var bidder_timeout = config.get('Exchange.bidder_timeout');
+var bidders = config.get('Exchange.bidders');
+var auctioneer = new br.Auctioneer(bidders,bidder_timeout,EXCHANGE_CONNECTION,logger);
+
 /*  ------------------- HTTP Endpoints  ------------------- */
 
 app.listen(app.get('port'), function() {
@@ -98,8 +104,6 @@ app.listen(app.get('port'), function() {
 app.get('/', function(request, response) {
     response.send('Welcome to the Cliques Ad Exchange');
 });
-
-var TEST_BID_URL = [config.get('Exchange.bidder.url')]; //+ querystring.encode({'bidder_id': 1})];
 
 function default_condition(error, request, response){
     // TODO: make a DB call here to get default
@@ -122,9 +126,6 @@ app.get('/pub', function(request, response){
     5) Logs response w/ winning bid metadata
     6) Sends win-notice via HTTP GET to winning bidder */
 
-    //TODO: Add some logic here to figure out how bid urls are retrieved
-    var bid_urls = TEST_BID_URL;
-
     // log request, add uuid metadata
     node_utils.logging.log_request(logger,request,
         { 'req_uuid':request.old_uuid, 'uuid': request.uuid });
@@ -137,10 +138,10 @@ app.get('/pub', function(request, response){
     }
 
     // now do the hard stuff (1. Get bids, 2. Run auction, send response, 3. send win notice)
-    br.get_bids(bid_urls, request, logger, EXCHANGE_CONNECTION, function (e, result) {
+    auctioneer.get_bids(request, function (e, result) {
         if (e) return default_condition(e, request, response);
 
-        br.run_auction(result, function (er, winning_bid) {
+        auctioneer.run_auction(result, function (er, winning_bid) {
             if (er) return default_condition(er, request, response);
 
             response.status(200).json(winning_bid);
@@ -155,7 +156,7 @@ app.get('/pub', function(request, response){
                 clearprice: winning_bid.clearprice
             };
             node_utils.logging.log_response(logger, response, auction_meta);
-            br.send_win_notice(winning_bid, request.uuid, function (err, nurl, response, body) {
+            auctioneer.send_win_notice(winning_bid, request.uuid, function (err, nurl, response, body) {
                 if (err) {
                     logger.error(err);
                     return
@@ -184,7 +185,7 @@ app.get('/rtb_test', function(request, response){
     // generate request data again just for show
     request.query = {"tag_id": "54f8df2e6bcc85d9653becfb"};
     var qs = querystring.encode(request.query);
-    br._create_single_imp_bid_request(request,EXCHANGE_CONNECTION,function(err,request_data){
+    auctioneer._create_single_imp_bid_request(request,function(err,request_data){
         var fn = jade.compileFile('./templates/rtb_test.jade', null);
         var html = fn({request_data: JSON.stringify(request_data, null, 2), qs: qs});
         node_utils.logging.log_request(logger, request);
