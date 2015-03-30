@@ -138,43 +138,8 @@ app.get('/pub', function(request, response){
     }
 
     // now do the hard stuff (1. Get bids, 2. Run auction, send response, 3. send win notice)
-    auctioneer.get_bids(request, function (e, result) {
-        if (e) return default_condition(e, request, response);
-
-        auctioneer.run_auction(result, function (er, winning_bid) {
-            if (er) return default_condition(er, request, response);
-
-            response.status(200).json(winning_bid);
-            //logger.info("Winning bid: " + JSON.stringify(winning_bid, null, 2));
-            var auction_meta = {
-                bidobj__id: winning_bid.bidobj__id,
-                bidobj__bidid: winning_bid.bidobj__bidid,
-                bidid: winning_bid.id,
-                impid: winning_bid.impid,
-                adid: winning_bid.adid,
-                bid1: winning_bid.price,
-                clearprice: winning_bid.clearprice
-            };
-            node_utils.logging.log_response(logger, response, auction_meta);
-            auctioneer.send_win_notice(winning_bid, request.uuid, function (err, nurl, response, body) {
-                if (err) {
-                    logger.error(err);
-                    return
-                }
-                var win_notice_meta = {
-                    type: 'win-notice',
-                    nurl: nurl,
-                    statusCode: response.statusCode
-                };
-                logger.info("WIN-NOTICE", win_notice_meta);
-                if (response.statusCode != 200){
-                    logger.error('HTTP Error on win notice, Status Code ' + response.statusCode + ': ' + body);
-                    if (body.constructor === {}.constructor){
-                        logger.error(JSON.stringify(body, null, 2));
-                    }
-                }
-            });
-        });
+    auctioneer.main(request, response, function(err, response){
+        if (err) return default_condition(err, request, response);
     });
 });
 

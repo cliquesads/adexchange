@@ -23,7 +23,7 @@ describe('Second Price Auction', function(){
                     }]
                 }
             ];
-            br.run_auction(test_bids_single_obj, function (err, winning_bid) {
+            br.runAuction(test_bids_single_obj, function (err, winning_bid) {
                 assert.equal(winning_bid.id, 68110451);
                 assert.equal(winning_bid.clearprice, 5.95);
             });
@@ -54,7 +54,7 @@ describe('Second Price Auction', function(){
                     [{"seat": 8583,"bid": [{"id": 48705300,"impid": "231159286491452","price": 6.58}]}]
                 }
             ];
-            br.run_auction(test_bids_multi_obj, function (err, winning_bid){
+            br.runAuction(test_bids_multi_obj, function (err, winning_bid){
                 assert.equal(winning_bid.id, 40577572);
                 assert.equal(winning_bid.clearprice, 6.59);
             });
