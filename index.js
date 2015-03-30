@@ -83,7 +83,7 @@ app.use(function(req, res, next) {
 });
 app.use(cookieParser());
 app.use(responseTime());
-app.set('port', (process.env['EXCHANGE-WEBSERVER-PORT'] || config.get('Exchange.http.port') || 5000));
+app.set('port', (config.get('Exchange.http.port') || 5000));
 app.use(express.static(__dirname + '/public'));
 
 // custom cookie-parsing middleware
@@ -115,17 +115,17 @@ function default_condition(error, request, response){
     }
 }
 
+/**
+ * Main endpoint to handle incoming impression requests & respond with winning ad markup.
+ * Does the following, in order:
+ * 1) Logs incoming request
+ * 2) Retrieves bids via HTTP POST requests using OpenRTB 2.3 bid request object
+ * 3) Runs 2nd-price Vickrey auction based on bid-responses
+ * 4) Returns winning ad markup in HTTP JSON response
+ * 5) Logs response w/ winning bid metadata
+ * 6) Sends win-notice via HTTP GET to winning bidder
+*/
 app.get('/pub', function(request, response){
-    /*  Main function to handle incoming impression requests & respond with winning ad markup.
-
-    Does the following, in order:
-    1) Logs incoming request
-    2) Retrieves bids via HTTP POST requests using OpenRTB 2.3 bid request object
-    3) Runs 2nd-price Vickrey auction based on bid-responses
-    4) Returns winning ad markup in HTTP JSON response
-    5) Logs response w/ winning bid metadata
-    6) Sends win-notice via HTTP GET to winning bidder */
-
     // log request, add uuid metadata
     node_utils.logging.log_request(logger,request,
         { 'req_uuid':request.old_uuid, 'uuid': request.uuid });
@@ -136,14 +136,15 @@ app.get('/pub', function(request, response){
         logger.error('GET Request sent to /pub with no tag_id');
         return
     }
-
-    // now do the hard stuff (1. Get bids, 2. Run auction, send response, 3. send win notice)
+    // now do the hard stuff
     auctioneer.main(request, response, function(err, response){
         if (err) return default_condition(err, request, response);
     });
 });
 
-//RTB Test page, just a placeholder
+/**
+ * RTB Test page, just a placeholder
+ */
 app.get('/rtb_test', function(request, response){
     // fake the referer address just for show in the request data object
     request.headers.referer = 'http://' + request.headers['host'] + request.originalUrl;
