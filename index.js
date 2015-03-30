@@ -2,6 +2,7 @@
 var br = require('./lib/bid_requests');
 var node_utils = require('cliques_node_utils');
 var cliques_cookies = node_utils.cookies;
+var logging = require('./lib/exchange_logging');
 var db = node_utils.mongodb;
 
 //third-party packages
@@ -32,10 +33,9 @@ var logfile = path.join(
     util.format('adexchange_%s.log',node_utils.dates.isoFormatUTCNow())
 );
 
-var devNullLogger = logger = new (winston.Logger)({transports: []});
-
+var devNullLogger = logger = new (logging.ExchangeCLogger)({transports: []});
 if (process.env.NODE_ENV != 'test'){
-    var logger = new (winston.Logger)({
+    var logger = new (logging.ExchangeCLogger)({
         transports: [
             new (winston.transports.Console)({timestamp:true}),
             new (winston.transports.File)({filename:logfile,timestamp:true})
@@ -89,6 +89,10 @@ app.use(express.static(__dirname + '/public'));
 // custom cookie-parsing middleware
 app.use(cliques_cookies.get_or_set_uuid);
 
+// custom HTTP request & response logging middleware
+app.use(logger.httpRequestMiddleware);
+app.use(logger.httpResponseMiddleware);
+
 /* --------------------- AUCTIONEER -----------------------*/
 
 var bidder_timeout = config.get('Exchange.bidder_timeout');
@@ -105,14 +109,9 @@ app.get('/', function(request, response) {
     response.send('Welcome to the Cliques Ad Exchange');
 });
 
-function default_condition(error, request, response){
+function default_condition(response){
     // TODO: make a DB call here to get default
-    response.json({"adm": config.get('Exchange.defaultcondition.300x250'), "default": true}).status(200);
-    if (error.constructor === {}.constructor){
-        logger.error(JSON.stringify(error, null, 2));
-    } else {
-        logger.error(error);
-    }
+    return response.json({"adm": config.get('Exchange.defaultcondition.300x250'), "default": true}).status(200);
 }
 
 /**
@@ -127,8 +126,8 @@ function default_condition(error, request, response){
 */
 app.get('/pub', function(request, response){
     // log request, add uuid metadata
-    node_utils.logging.log_request(logger,request,
-        { 'req_uuid':request.old_uuid, 'uuid': request.uuid });
+    //node_utils.logging.log_request(logger,request,
+    //    { 'req_uuid':request.old_uuid, 'uuid': request.uuid });
 
     // first check if incoming request has necessary query params
     if (!request.query.hasOwnProperty('tag_id')){
@@ -137,8 +136,11 @@ app.get('/pub', function(request, response){
         return
     }
     // now do the hard stuff
-    auctioneer.main(request, response, function(err, response){
-        if (err) return default_condition(err, request, response);
+    auctioneer.main(request, response, function(err, winning_bid){
+        logger.impression(err, request, response, winning_bid);
+        if (err) {
+            default_condition(response);
+        }
     });
 });
 
