@@ -59,17 +59,35 @@ if (process.env.NODE_ENV != 'test'){
 /* ------------------- MONGODB - EXCHANGE DB ------------------- */
 
 // Build the connection string
-var mongoURI = util.format('mongodb://%s:%s/%s',
-    config.get('Exchange.mongodb.secondary.host'),
-    config.get('Exchange.mongodb.secondary.port'),
-    config.get('Exchange.mongodb.db'));
+var exchangeMongoURI = util.format('mongodb://%s:%s/%s',
+    config.get('Exchange.mongodb.exchange.secondary.host'),
+    config.get('Exchange.mongodb.exchange.secondary.port'),
+    config.get('Exchange.mongodb.exchange.db'));
 
-var mongoOptions = {
-    user: config.get('Exchange.mongodb.user'),
-    pass: config.get('Exchange.mongodb.pwd'),
-    auth: {authenticationDatabase: config.get('Exchange.mongodb.db')}
+var exchangeMongoOptions = {
+    user: config.get('Exchange.mongodb.exchange.user'),
+    pass: config.get('Exchange.mongodb.exchange.pwd'),
+    auth: {authenticationDatabase: config.get('Exchange.mongodb.exchange.db')}
 };
-var EXCHANGE_CONNECTION = db.createConnectionWrapper(mongoURI, mongoOptions, function(err, logstring){
+var EXCHANGE_CONNECTION = db.createConnectionWrapper(exchangeMongoURI, exchangeMongoOptions, function(err, logstring){
+    if (err) throw err;
+    logger.info(logstring);
+});
+
+/* ------------------- MONGODB - USER DB ------------------- */
+
+// Build the connection string
+var userMongoURI = util.format('mongodb://%s:%s/%s',
+    config.get('Exchange.mongodb.user.primary.host'),
+    config.get('Exchange.mongodb.user.primary.port'),
+    config.get('Exchange.mongodb.user.db'));
+
+var userMongoOptions = {
+    user: config.get('Exchange.mongodb.user.user'),
+    pass: config.get('Exchange.mongodb.user.pwd'),
+    auth: {authenticationDatabase: config.get('Exchange.mongodb.user.db')}
+};
+var USER_CONNECTION = db.createConnectionWrapper(userMongoURI, userMongoOptions, function(err, logstring){
     if (err) throw err;
     logger.info(logstring);
 });
@@ -87,15 +105,15 @@ app.set('port', (config.get('Exchange.http.port') || 5000));
 app.use(express.static(__dirname + '/public'));
 
 // custom cookie-parsing middleware
-app.use(cliques_cookies.get_or_set_uuid);
+var cookie_handler = new cliques_cookies.CookieHandler(config.get('Exchange.cookies.expirationdays'),USER_CONNECTION);
+app.use(function(req, res, next){
+    cookie_handler.get_or_set_uuid(req, res, next);
+});
 
 // custom HTTP request logging middleware
 app.use(function(req, res, next){
     logger.httpRequestMiddleware(req, res, next);
 });
-//app.use(function(req,res,next){
-//    logger.httpResponseMiddleware(req, res, next);
-//});
 
 /* --------------------- AUCTIONEER -----------------------*/
 
@@ -172,6 +190,6 @@ app.get('/rtb_test', function(request, response){
 /* ------------------- EXPORTS mostly just for unittesting ------------------- */
 
 exports.app = app;
-exports.mongoURI = mongoURI;
-exports.mongoOptions = mongoOptions;
+exports.exchangeMongoURI = exchangeMongoURI;
+exports.exchangeMongoOptions = exchangeMongoOptions;
 exports.devNullLogger = devNullLogger;

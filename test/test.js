@@ -12,7 +12,7 @@ var index = require('../index');
 
 describe('MongoDB', function(){
     it('Can connect to database: exchange', function(done){
-        var db = mongoose.createConnection(index.mongoURI, index.mongoOptions);
+        var db = mongoose.createConnection(index.exchangeMongoURI, index.exchangeMongoOptions);
         db.on('connected', function(){
             done();
         });
