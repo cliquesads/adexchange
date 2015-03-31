@@ -90,8 +90,12 @@ app.use(express.static(__dirname + '/public'));
 app.use(cliques_cookies.get_or_set_uuid);
 
 // custom HTTP request & response logging middleware
-app.use(logger.httpRequestMiddleware);
-app.use(logger.httpResponseMiddleware);
+app.use(function(req, res, next){
+    logger.httpRequestMiddleware(req, res, next);
+});
+app.use(function(req,res,next){
+    logger.httpResponseMiddleware(req, res, next);
+});
 
 /* --------------------- AUCTIONEER -----------------------*/
 
