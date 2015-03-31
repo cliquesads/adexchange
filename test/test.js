@@ -20,6 +20,15 @@ describe('MongoDB', function(){
             done(err);
         })
     });
+    it('Can connect to database: user', function(done){
+        var db = mongoose.createConnection(index.userMongoURI, index.userMongoOptions);
+        db.on('connected', function(){
+            done();
+        });
+        db.on('error', function(err){
+            done(err);
+        })
+    });
 });
 
 describe('Config', function(){

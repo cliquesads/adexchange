@@ -192,4 +192,6 @@ app.get('/rtb_test', function(request, response){
 exports.app = app;
 exports.exchangeMongoURI = exchangeMongoURI;
 exports.exchangeMongoOptions = exchangeMongoOptions;
+exports.userMongoURI = userMongoURI;
+exports.userMongoOptions = userMongoOptions;
 exports.devNullLogger = devNullLogger;
