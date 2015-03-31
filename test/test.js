@@ -29,7 +29,6 @@ describe('Config', function(){
     });
 });
 
-
 describe('WebServer', function(){
     //UUID value on incoming request gets propagated to request object for downstream processing
     //var req = {cookies: {uuid: "cc820770-c1e6-11e4-b7ba-e977f4853d86"}};
