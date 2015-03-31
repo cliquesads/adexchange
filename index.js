@@ -89,13 +89,13 @@ app.use(express.static(__dirname + '/public'));
 // custom cookie-parsing middleware
 app.use(cliques_cookies.get_or_set_uuid);
 
-// custom HTTP request & response logging middleware
+// custom HTTP request logging middleware
 app.use(function(req, res, next){
     logger.httpRequestMiddleware(req, res, next);
 });
-app.use(function(req,res,next){
-    logger.httpResponseMiddleware(req, res, next);
-});
+//app.use(function(req,res,next){
+//    logger.httpResponseMiddleware(req, res, next);
+//});
 
 /* --------------------- AUCTIONEER -----------------------*/
 
@@ -145,6 +145,7 @@ app.get('/pub', function(request, response){
         if (err) {
             default_condition(response);
         }
+        logger.response(response)
     });
 });
 
