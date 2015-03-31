@@ -139,13 +139,15 @@ app.get('/pub', function(request, response){
         logger.error('GET Request sent to /pub with no tag_id');
         return
     }
-    // now do the hard stuff
     auctioneer.main(request, response, function(err, winning_bid){
-        logger.impression(err, request, response, winning_bid);
         if (err) {
             default_condition(response);
+        } else {
+            response.status(200).json(winning_bid);
         }
-        logger.response(response)
+        logger.httpResponse(response);
+        logger.impression(err, request, response, winning_bid);
+        //
     });
 });
 
