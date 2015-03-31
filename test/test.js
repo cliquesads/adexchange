@@ -53,7 +53,7 @@ describe('Auctioneer', function(){
 
     var bidders = config.get('Exchange.bidders');
     var timeout = config.get('Exchange.bidder_timeout');
-    var db = mongoose.createConnection(index.mongoURI, index.mongoOptions);
+    var db = mongoose.createConnection(index.exchangeMongoURI, index.exchangeMongoOptions);
     var auctioneer = new br.Auctioneer(bidders, timeout, db, index.devNullLogger);
 
     describe('MultiSeatBids', function(){
