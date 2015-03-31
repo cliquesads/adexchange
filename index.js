@@ -1,8 +1,9 @@
 //first-party packages
 var br = require('./lib/bid_requests');
 var node_utils = require('cliques_node_utils');
-var cliques_cookies = require('./lib/cookies');
-var db = require('./lib/db');
+var cliques_cookies = node_utils.cookies;
+var logging = require('./lib/exchange_logging');
+var db = node_utils.mongodb;
 
 //third-party packages
 //have to require PMX before express to enable monitoring
@@ -32,10 +33,9 @@ var logfile = path.join(
     util.format('adexchange_%s.log',node_utils.dates.isoFormatUTCNow())
 );
 
-var devNullLogger = logger = new (winston.Logger)({transports: []});
-
+var devNullLogger = logger = new logging.ExchangeCLogger({transports: []});
 if (process.env.NODE_ENV != 'test'){
-    var logger = new (winston.Logger)({
+    var logger = new logging.ExchangeCLogger({
         transports: [
             new (winston.transports.Console)({timestamp:true}),
             new (winston.transports.File)({filename:logfile,timestamp:true})
@@ -56,20 +56,38 @@ if (process.env.NODE_ENV != 'test'){
 //    });
 //}
 
-/* ------------------- MONGODB ------------------- */
+/* ------------------- MONGODB - EXCHANGE DB ------------------- */
 
 // Build the connection string
-var mongoURI = util.format('mongodb://%s:%s/%s',
-    config.get('Exchange.mongodb.secondary.host'),
-    config.get('Exchange.mongodb.secondary.port'),
-    config.get('Exchange.mongodb.db'));
+var exchangeMongoURI = util.format('mongodb://%s:%s/%s',
+    config.get('Exchange.mongodb.exchange.secondary.host'),
+    config.get('Exchange.mongodb.exchange.secondary.port'),
+    config.get('Exchange.mongodb.exchange.db'));
 
-var mongoOptions = {
-    user: config.get('Exchange.mongodb.user'),
-    pass: config.get('Exchange.mongodb.pwd'),
-    auth: {authenticationDatabase: config.get('Exchange.mongodb.db')}
+var exchangeMongoOptions = {
+    user: config.get('Exchange.mongodb.exchange.user'),
+    pass: config.get('Exchange.mongodb.exchange.pwd'),
+    auth: {authenticationDatabase: config.get('Exchange.mongodb.exchange.db')}
 };
-db.mongoConnect(mongoURI, mongoOptions, function(err, logstring){
+var EXCHANGE_CONNECTION = db.createConnectionWrapper(exchangeMongoURI, exchangeMongoOptions, function(err, logstring){
+    if (err) throw err;
+    logger.info(logstring);
+});
+
+/* ------------------- MONGODB - USER DB ------------------- */
+
+// Build the connection string
+var userMongoURI = util.format('mongodb://%s:%s/%s',
+    config.get('Exchange.mongodb.user.primary.host'),
+    config.get('Exchange.mongodb.user.primary.port'),
+    config.get('Exchange.mongodb.user.db'));
+
+var userMongoOptions = {
+    user: config.get('Exchange.mongodb.user.user'),
+    pass: config.get('Exchange.mongodb.user.pwd'),
+    auth: {authenticationDatabase: config.get('Exchange.mongodb.user.db')}
+};
+var USER_CONNECTION = db.createConnectionWrapper(userMongoURI, userMongoOptions, function(err, logstring){
     if (err) throw err;
     logger.info(logstring);
 });
@@ -87,7 +105,21 @@ app.set('port', (process.env['EXCHANGE-WEBSERVER-PORT'] || config.get('Exchange.
 app.use(express.static(__dirname + '/public'));
 
 // custom cookie-parsing middleware
-app.use(cliques_cookies.get_or_set_uuid);
+var cookie_handler = new cliques_cookies.CookieHandler(config.get('Exchange.cookies.expirationdays'),USER_CONNECTION);
+app.use(function(req, res, next){
+    cookie_handler.get_or_set_uuid(req, res, next);
+});
+
+// custom HTTP request logging middleware
+app.use(function(req, res, next){
+    logger.httpRequestMiddleware(req, res, next);
+});
+
+/* --------------------- AUCTIONEER -----------------------*/
+
+var bidder_timeout = config.get('Exchange.bidder_timeout');
+var bidders = config.get('Exchange.bidders');
+var auctioneer = new br.Auctioneer(bidders,bidder_timeout,EXCHANGE_CONNECTION,logger);
 
 /*  ------------------- HTTP Endpoints  ------------------- */
 
@@ -99,35 +131,25 @@ app.get('/', function(request, response) {
     response.send('Welcome to the Cliques Ad Exchange');
 });
 
-var TEST_BID_URL = [config.get('Exchange.bidder.url')]; //+ querystring.encode({'bidder_id': 1})];
-
-function default_condition(error, request, response){
+function default_condition(response){
     // TODO: make a DB call here to get default
-    response.json({"adm": config.get('Exchange.defaultcondition.300x250'), "default": true}).status(200);
-    if (error.constructor === {}.constructor){
-        logger.error(JSON.stringify(error, null, 2));
-    } else {
-        logger.error(error);
-    }
+    return response.json({"adm": config.get('Exchange.defaultcondition.300x250'), "default": true}).status(200);
 }
 
+/**
+ * Main endpoint to handle incoming impression requests & respond with winning ad markup.
+ * Does the following, in order:
+ * 1) Logs incoming request
+ * 2) Retrieves bids via HTTP POST requests using OpenRTB 2.3 bid request object
+ * 3) Runs 2nd-price Vickrey auction based on bid-responses
+ * 4) Returns winning ad markup in HTTP JSON response
+ * 5) Logs response w/ winning bid metadata
+ * 6) Sends win-notice via HTTP GET to winning bidder
+*/
 app.get('/pub', function(request, response){
-    /*  Main function to handle incoming impression requests & respond with winning ad markup.
-
-    Does the following, in order:
-    1) Logs incoming request
-    2) Retrieves bids via HTTP POST requests using OpenRTB 2.3 bid request object
-    3) Runs 2nd-price Vickrey auction based on bid-responses
-    4) Returns winning ad markup in HTTP JSON response
-    5) Logs response w/ winning bid metadata
-    6) Sends win-notice via HTTP GET to winning bidder */
-
-    //TODO: Add some logic here to figure out how bid urls are retrieved
-    var bid_urls = TEST_BID_URL;
-
     // log request, add uuid metadata
-    node_utils.logging.log_request(logger,request,
-        { 'req_uuid':request.old_uuid, 'uuid': request.uuid });
+    //node_utils.logging.log_request(logger,request,
+    //    { 'req_uuid':request.old_uuid, 'uuid': request.uuid });
 
     // first check if incoming request has necessary query params
     if (!request.query.hasOwnProperty('tag_id')){
@@ -135,49 +157,28 @@ app.get('/pub', function(request, response){
         logger.error('GET Request sent to /pub with no tag_id');
         return
     }
-
-    // now do the hard stuff (1. Get bids, 2. Run auction, send response, 3. send win notice)
-    br.get_bids(bid_urls, request, logger, function (e, result) {
-        if (e) return default_condition(e, request, response);
-
-        br.run_auction(result, function (er, winning_bid) {
-            if (er) return default_condition(er, request, response);
-
+    auctioneer.main(request, response, function(err, winning_bid){
+        if (err) {
+            default_condition(response);
+        } else {
             response.status(200).json(winning_bid);
-            var auction_meta = {
-                bidobj__id: winning_bid.bidobj__id,
-                bidobj__bidid: winning_bid.bidobj__bidid,
-                bidid: winning_bid.id,
-                impid: winning_bid.impid,
-                adid: winning_bid.adid,
-                bid1: winning_bid.price,
-                clearprice: winning_bid.clearprice
-            };
-            node_utils.logging.log_response(logger, response, auction_meta);
-            br.send_win_notice(winning_bid, function (err, nurl, response) {
-                if (err) {
-                    logger.error(err);
-                    return
-                }
-                var win_notice_meta = {
-                    type: 'win-notice',
-                    nurl: nurl,
-                    statusCode: response.statusCode
-                };
-                logger.info("WIN-NOTICE", win_notice_meta);
-            });
-        });
+        }
+        logger.httpResponse(response);
+        logger.impression(err, request, response, winning_bid);
+        //
     });
 });
 
-//RTB Test page, just a placeholder
+/**
+ * RTB Test page, just a placeholder
+ */
 app.get('/rtb_test', function(request, response){
     // fake the referer address just for show in the request data object
     request.headers.referer = 'http://' + request.headers['host'] + request.originalUrl;
     // generate request data again just for show
     request.query = {"tag_id": "54f8df2e6bcc85d9653becfb"};
     var qs = querystring.encode(request.query);
-    br._create_single_imp_bid_request(request,function(err,request_data){
+    auctioneer._create_single_imp_bid_request(request,function(err,request_data){
         var fn = jade.compileFile('./templates/rtb_test.jade', null);
         var html = fn({request_data: JSON.stringify(request_data, null, 2), qs: qs});
         node_utils.logging.log_request(logger, request);
@@ -189,6 +190,8 @@ app.get('/rtb_test', function(request, response){
 /* ------------------- EXPORTS mostly just for unittesting ------------------- */
 
 exports.app = app;
-exports.mongoURI = mongoURI;
-exports.mongoOptions = mongoOptions;
+exports.exchangeMongoURI = exchangeMongoURI;
+exports.exchangeMongoOptions = exchangeMongoOptions;
+exports.userMongoURI = userMongoURI;
+exports.userMongoOptions = userMongoOptions;
 exports.devNullLogger = devNullLogger;
