@@ -33,9 +33,9 @@ var logfile = path.join(
     util.format('adexchange_%s.log',node_utils.dates.isoFormatUTCNow())
 );
 
-var devNullLogger = logger = new (logging.ExchangeCLogger)({transports: []});
+var devNullLogger = logger = new logging.ExchangeCLogger({transports: []});
 if (process.env.NODE_ENV != 'test'){
-    var logger = new (logging.ExchangeCLogger)({
+    var logger = new logging.ExchangeCLogger({
         transports: [
             new (winston.transports.Console)({timestamp:true}),
             new (winston.transports.File)({filename:logfile,timestamp:true})
