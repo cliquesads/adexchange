@@ -4,6 +4,8 @@ var node_utils = require('cliques_node_utils');
 var cliques_cookies = node_utils.cookies;
 var logging = require('./lib/exchange_logging');
 var db = node_utils.mongodb;
+var bigQueryUtils = node_utils.google.bigQueryUtils;
+var googleAuth = node_utils.google.auth;
 
 //third-party packages
 //have to require PMX before express to enable monitoring
@@ -35,11 +37,18 @@ var logfile = path.join(
 
 var devNullLogger = logger = new logging.ExchangeCLogger({transports: []});
 if (process.env.NODE_ENV != 'test'){
-    var logger = new logging.ExchangeCLogger({
-        transports: [
-            new (winston.transports.Console)({timestamp:true}),
-            new (winston.transports.File)({filename:logfile,timestamp:true})
-        ]
+    var logger;
+    var bq_config = bigQueryUtils.loadFullBigQueryConfig('./bq_config.json');
+    googleAuth.getJWTAuthClient(googleAuth.DEFAULT_JWT_SECRETS_FILE, googleAuth.BIGQUERY_SCOPE, function(err, auth){
+        if (err) throw err;
+        var eventStreamer = new bigQueryUtils.BigQueryEventStreamer(bq_config,auth,20);
+        logger = new logging.ExchangeCLogger({
+            transports: [
+                new (winston.transports.Console)({timestamp:true}),
+                new (winston.transports.File)({filename:logfile,timestamp:true}),
+                new (winston.transports.RedisEventCache)({ eventSchema: eventStreamer.getEventSchema()})
+            ]
+        });
     });
 } else {
     // just for running unittests so whole HTTP log isn't written to console
@@ -181,9 +190,9 @@ app.get('/rtb_test', function(request, response){
     auctioneer._create_single_imp_bid_request(request,function(err,request_data){
         var fn = jade.compileFile('./templates/rtb_test.jade', null);
         var html = fn({request_data: JSON.stringify(request_data, null, 2), qs: qs});
-        node_utils.logging.log_request(logger, request);
+        //node_utils.logging.log_request(logger, request);
         response.send(html);
-        node_utils.logging.log_response(logger, response);
+        //node_utils.logging.log_response(logger, response);
     });
 });
 

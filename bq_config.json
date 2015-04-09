@@ -20,7 +20,7 @@
       }
     },
     "WIN-NOTICE": {
-      "tableId": "win-notices",
+      "tableId": "win_notices",
       "datasetId": "ad_events",
       "schema": {
         "fields": [
@@ -33,7 +33,7 @@
       }
     },
     "BID-RESPONSE": {
-      "tableId": "bid-responses",
+      "tableId": "bid_responses",
       "datasetId": "ad_events",
       "schema": {
         "fields": [
