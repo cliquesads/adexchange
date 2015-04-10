@@ -37,18 +37,19 @@ var logfile = path.join(
 
 var devNullLogger = logger = new logging.ExchangeCLogger({transports: []});
 if (process.env.NODE_ENV != 'test'){
-    var logger;
+    logger = new logging.ExchangeCLogger({
+        transports: [
+            //new (winston.transports.Console)({timestamp:true}),
+            new (winston.transports.File)({filename:logfile,timestamp:true})
+        ]
+    });
+    // now add RedisEventCache transport w/ BigQuery streamer
     var bq_config = bigQueryUtils.loadFullBigQueryConfig('./bq_config.json');
     googleAuth.getJWTAuthClient(googleAuth.DEFAULT_JWT_SECRETS_FILE, googleAuth.BIGQUERY_SCOPE, function(err, auth){
         if (err) throw err;
         var eventStreamer = new bigQueryUtils.BigQueryEventStreamer(bq_config,auth,20);
-        logger = new logging.ExchangeCLogger({
-            transports: [
-                new (winston.transports.Console)({timestamp:true}),
-                new (winston.transports.File)({filename:logfile,timestamp:true}),
-                new (winston.transports.RedisEventCache)({ eventSchema: eventStreamer.getEventSchema()})
-            ]
-        });
+        //var redis_transport = new winston.transports.RedisEventCache();
+        logger.add(winston.transports.RedisEventCache,{ eventStreamer: eventStreamer });
     });
 } else {
     // just for running unittests so whole HTTP log isn't written to console

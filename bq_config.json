@@ -14,8 +14,8 @@
           {"name": "bidid","type": "STRING"},
           {"name": "impid","type": "STRING"},
           {"name": "adid","type": "STRING"},
-          {"name": "bid1","type": "STRING"},
-          {"name": "clearprice","type": "STRING"}
+          {"name": "bid1","type": "FLOAT"},
+          {"name": "clearprice","type": "FLOAT"}
         ]
       }
     },
