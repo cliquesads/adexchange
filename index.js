@@ -21,6 +21,7 @@ var util = require('util');
 var cookieParser = require('cookie-parser');
 var responseTime = require('response-time');
 var config = require('config');
+var exitHook = require('exit-hook');
 
 /* -------------------  NOTES ------------------- */
 
@@ -37,34 +38,20 @@ var logfile = path.join(
 
 var devNullLogger = logger = new logging.ExchangeCLogger({transports: []});
 if (process.env.NODE_ENV != 'test'){
+    var bq_config = bigQueryUtils.loadFullBigQueryConfig('./bq_config.json');
+    var eventStreamer = new bigQueryUtils.BigQueryEventStreamer(bq_config,
+        googleAuth.DEFAULT_JWT_SECRETS_FILE,20);
     logger = new logging.ExchangeCLogger({
         transports: [
-            //new (winston.transports.Console)({timestamp:true}),
-            new (winston.transports.File)({filename:logfile,timestamp:true})
+            new (winston.transports.Console)({timestamp:true}),
+            new (winston.transports.File)({filename:logfile,timestamp:true}),
+            new (winston.transports.RedisEventCache)({ eventStreamer: eventStreamer})
         ]
-    });
-    // now add RedisEventCache transport w/ BigQuery streamer
-    var bq_config = bigQueryUtils.loadFullBigQueryConfig('./bq_config.json');
-    googleAuth.getJWTAuthClient(googleAuth.DEFAULT_JWT_SECRETS_FILE, googleAuth.BIGQUERY_SCOPE, function(err, auth){
-        if (err) throw err;
-        var eventStreamer = new bigQueryUtils.BigQueryEventStreamer(bq_config,auth,20);
-        //var redis_transport = new winston.transports.RedisEventCache();
-        logger.add(winston.transports.RedisEventCache,{ eventStreamer: eventStreamer });
     });
 } else {
     // just for running unittests so whole HTTP log isn't written to console
     logger = devNullLogger;
 }
-
-/* -------------------  DEBUGGING/PROFILING ------------------- */
-
-//// Only enable Nodetime in local test env
-//if (process.env.NODE_ENV == 'local-test'){
-//    require('nodetime').profile({
-//        accountKey: config.get('Exchange.nodetime.license_key'),
-//        appName: config.get('Exchange.nodetime.appName')
-//    });
-//}
 
 /* ------------------- MONGODB - EXCHANGE DB ------------------- */
 
@@ -133,7 +120,7 @@ var auctioneer = new br.Auctioneer(bidders,bidder_timeout,EXCHANGE_CONNECTION,lo
 
 /*  ------------------- HTTP Endpoints  ------------------- */
 
-app.listen(app.get('port'), function() {
+var server = app.listen(app.get('port'), function(){
     logger.info("Cliques Ad Exchange is running at localhost:" + app.get('port'));
 });
 

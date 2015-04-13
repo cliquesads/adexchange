@@ -5,6 +5,7 @@
       "datasetId": "ad_events",
       "schema": {
         "fields": [
+          {"name": "hostname", "type": "STRING"},
           {"name": "level","type": "STRING"},
           {"name": "msg","type": "STRING"},
           {"name": "tstamp","type": "TIMESTAMP"},
@@ -24,6 +25,7 @@
       "datasetId": "ad_events",
       "schema": {
         "fields": [
+          {"name": "hostname", "type": "STRING"},
           {"name": "level","type": "STRING"},
           {"name": "msg","type": "STRING"},
           {"name": "tstamp","type": "TIMESTAMP"},
@@ -37,6 +39,7 @@
       "datasetId": "ad_events",
       "schema": {
         "fields": [
+          {"name": "hostname", "type": "STRING"},
           {"name": "level","type": "STRING"},
           {"name": "msg","type": "STRING"},
           {"name": "tstamp","type": "TIMESTAMP"},
