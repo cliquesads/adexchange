@@ -26,7 +26,6 @@ var exitHook = require('exit-hook');
 /* -------------------  NOTES ------------------- */
 
 //TODO: invocation-tags (client-side shit),
-//TODO: unit tests (some simple ones)
 
 /* -------------------  LOGGING ------------------- */
 
@@ -144,10 +143,6 @@ function default_condition(response){
  * 6) Sends win-notice via HTTP GET to winning bidder
 */
 app.get('/pub', function(request, response){
-    // log request, add uuid metadata
-    //node_utils.logging.log_request(logger,request,
-    //    { 'req_uuid':request.old_uuid, 'uuid': request.uuid });
-
     // first check if incoming request has necessary query params
     if (!request.query.hasOwnProperty('tag_id')){
         response.status(404).send("ERROR 404: Page not found - no tag_id parameter provided.");
@@ -162,7 +157,6 @@ app.get('/pub', function(request, response){
         }
         logger.httpResponse(response);
         logger.impression(err, request, response, winning_bid);
-        //
     });
 });
 
@@ -178,9 +172,7 @@ app.get('/rtb_test', function(request, response){
     auctioneer._create_single_imp_bid_request(request,function(err,request_data){
         var fn = jade.compileFile('./templates/rtb_test.jade', null);
         var html = fn({request_data: JSON.stringify(request_data, null, 2), qs: qs});
-        //node_utils.logging.log_request(logger, request);
         response.send(html);
-        //node_utils.logging.log_response(logger, response);
     });
 });
 
