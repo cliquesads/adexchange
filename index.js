@@ -26,7 +26,6 @@ var config = require('config');
 
 //TODO: invocation-placements (client-side shit),
 
-var hostname = config.get('Exchange.http.hostname');
 /* -------------------  LOGGING ------------------- */
 
 var logfile = path.join(
@@ -88,6 +87,13 @@ var USER_CONNECTION = node_utils.mongodb.createConnectionWrapper(userMongoURI, u
     if (err) throw err;
     logger.info(logstring);
 });
+
+/* ------------------- HOSTNAME VARIABLES ------------------- */
+
+// hostname var is external hostname, not localhost
+var hostname = config.get('Exchange.http.hostname');
+var port = (config.get('Exchange.http.port') || 5000);
+
 
 /* ------------------- EXPRESS MIDDLEWARE ------------------- */
 
@@ -153,7 +159,7 @@ app.get(urls.PUB_PATH, function(request, response){
 
     // parse using PubURL object in case you ever want to add additional
     // query params, encoding, parsing, etc.
-    var pubURL = urls.PubURL(hostname);
+    var pubURL = new urls.PubURL(hostname, port);
     var secure = (request.protocol == 'https');
     pubURL.parse(request.query, secure);
 
@@ -172,7 +178,6 @@ app.get(urls.PUB_PATH, function(request, response){
             });
         }
     });
-
 });
 
 /**
