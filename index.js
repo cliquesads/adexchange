@@ -178,10 +178,13 @@ app.get('/rtb_test', function(request, response){
     // generate request data again just for show
     request.query = {"placement_id": "54f8df2e6bcc85d9653becfb"};
     var qs = querystring.encode(request.query);
-    auctioneer._create_single_imp_bid_request(request,function(err,request_data){
-        var fn = jade.compileFile('./templates/rtb_test.jade', null);
-        var html = fn({request_data: JSON.stringify(request_data, null, 2), qs: qs});
-        response.send(html);
+    publisherModels.getNestedObjectById(request.query.placement_id,'Placement', function(err, placement) {
+        if (err) logger.error(err);
+        auctioneer._create_single_imp_bid_request(placement, request, function (err, request_data) {
+            var fn = jade.compileFile('./templates/rtb_test.jade', null);
+            var html = fn({request_data: JSON.stringify(request_data, null, 2), qs: qs});
+            response.send(html);
+        });
     });
 });
 
