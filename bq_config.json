@@ -1,7 +1,7 @@
 {
   "event_tables":{
-    "IMPRESSION": {
-      "tableId": "impressions",
+    "AUCTION": {
+      "tableId": "auctions",
       "datasetId": "ad_events",
       "schema": {
         "fields": [
@@ -16,7 +16,12 @@
           {"name": "impid","type": "STRING"},
           {"name": "adid","type": "STRING"},
           {"name": "bid1","type": "FLOAT"},
-          {"name": "clearprice","type": "FLOAT"}
+          {"name": "clearprice","type": "FLOAT"},
+          {"name": "placement", "type": "STRING"},
+          {"name": "page", "type": "STRING"},
+          {"name": "site", "type": "STRING"},
+          {"name": "publisher", "type": "STRING"},
+          {"name": "pub_clique", "type": "STRING"}
         ]
       }
     },

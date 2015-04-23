@@ -3,7 +3,6 @@ var br = require('./lib/bid_requests');
 var node_utils = require('cliques_node_utils');
 var cliques_cookies = node_utils.cookies;
 var logging = require('./lib/exchange_logging');
-var db = node_utils.mongodb;
 var bigQueryUtils = node_utils.google.bigQueryUtils;
 var googleAuth = node_utils.google.auth;
 
@@ -21,11 +20,10 @@ var util = require('util');
 var cookieParser = require('cookie-parser');
 var responseTime = require('response-time');
 var config = require('config');
-var exitHook = require('exit-hook');
 
 /* -------------------  NOTES ------------------- */
 
-//TODO: invocation-tags (client-side shit),
+//TODO: invocation-placements (client-side shit),
 
 /* -------------------  LOGGING ------------------- */
 
@@ -65,10 +63,13 @@ var exchangeMongoOptions = {
     pass: config.get('Exchange.mongodb.exchange.pwd'),
     auth: {authenticationDatabase: config.get('Exchange.mongodb.exchange.db')}
 };
-var EXCHANGE_CONNECTION = db.createConnectionWrapper(exchangeMongoURI, exchangeMongoOptions, function(err, logstring){
+var EXCHANGE_CONNECTION = node_utils.mongodb.createConnectionWrapper(exchangeMongoURI, exchangeMongoOptions, function(err, logstring){
     if (err) throw err;
     logger.info(logstring);
 });
+
+// create PublisherModels instance to access Publisher DB models
+var publisherModels = new node_utils.mongodb.models.PublisherModels(EXCHANGE_CONNECTION,{readPreference: 'secondary'});
 
 /* ------------------- MONGODB - USER DB ------------------- */
 
@@ -83,7 +84,7 @@ var userMongoOptions = {
     pass: config.get('Exchange.mongodb.user.pwd'),
     auth: {authenticationDatabase: config.get('Exchange.mongodb.user.db')}
 };
-var USER_CONNECTION = db.createConnectionWrapper(userMongoURI, userMongoOptions, function(err, logstring){
+var USER_CONNECTION = node_utils.mongodb.createConnectionWrapper(userMongoURI, userMongoOptions, function(err, logstring){
     if (err) throw err;
     logger.info(logstring);
 });
@@ -115,7 +116,7 @@ app.use(function(req, res, next){
 
 var bidder_timeout = config.get('Exchange.bidder_timeout');
 var bidders = config.get('Exchange.bidders');
-var auctioneer = new br.Auctioneer(bidders,bidder_timeout,EXCHANGE_CONNECTION,logger);
+var auctioneer = new br.Auctioneer(bidders,bidder_timeout,logger);
 
 /*  ------------------- HTTP Endpoints  ------------------- */
 
@@ -144,20 +145,28 @@ function default_condition(response){
 */
 app.get('/pub', function(request, response){
     // first check if incoming request has necessary query params
-    if (!request.query.hasOwnProperty('tag_id')){
-        response.status(404).send("ERROR 404: Page not found - no tag_id parameter provided.");
-        logger.error('GET Request sent to /pub with no tag_id');
+    if (!request.query.hasOwnProperty('placement_id')){
+        response.status(404).send("ERROR 404: Page not found - no placement_id parameter provided.");
+        logger.error('GET Request sent to /pub with no placement_id');
         return
     }
-    auctioneer.main(request, response, function(err, winning_bid){
+
+    publisherModels.getNestedObjectById(request.query.placement_id,'Placement', function(err, placement){
         if (err) {
             default_condition(response);
         } else {
-            response.status(200).json(winning_bid);
+            auctioneer.main(placement, request, response, function(err, winning_bid){
+                if (err) {
+                    default_condition(response);
+                } else {
+                    response.status(200).json(winning_bid);
+                }
+                logger.httpResponse(response);
+                logger.auction(err, placement, request, response, winning_bid);
+            });
         }
-        logger.httpResponse(response);
-        logger.impression(err, request, response, winning_bid);
     });
+
 });
 
 /**
@@ -167,7 +176,7 @@ app.get('/rtb_test', function(request, response){
     // fake the referer address just for show in the request data object
     request.headers.referer = 'http://' + request.headers['host'] + request.originalUrl;
     // generate request data again just for show
-    request.query = {"tag_id": "54f8df2e6bcc85d9653becfb"};
+    request.query = {"placement_id": "54f8df2e6bcc85d9653becfb"};
     var qs = querystring.encode(request.query);
     auctioneer._create_single_imp_bid_request(request,function(err,request_data){
         var fn = jade.compileFile('./templates/rtb_test.jade', null);
