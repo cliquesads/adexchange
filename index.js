@@ -1,6 +1,7 @@
 //first-party packages
 var br = require('./lib/bid_requests');
 var node_utils = require('cliques_node_utils');
+var urls = node_utils.urls;
 var cliques_cookies = node_utils.cookies;
 var logging = require('./lib/exchange_logging');
 var bigQueryUtils = node_utils.google.bigQueryUtils;
@@ -25,6 +26,7 @@ var config = require('config');
 
 //TODO: invocation-placements (client-side shit),
 
+var hostname = config.get('Exchange.http.hostname');
 /* -------------------  LOGGING ------------------- */
 
 var logfile = path.join(
@@ -32,7 +34,6 @@ var logfile = path.join(
     'logs',
     util.format('adexchange_%s.log',node_utils.dates.isoFormatUTCNow())
 );
-
 var devNullLogger = logger = new logging.ExchangeCLogger({transports: []});
 if (process.env.NODE_ENV != 'test'){
     var bq_config = bigQueryUtils.loadFullBigQueryConfig('./bq_config.json');
@@ -57,7 +58,6 @@ var exchangeMongoURI = util.format('mongodb://%s:%s/%s',
     config.get('Exchange.mongodb.exchange.secondary.host'),
     config.get('Exchange.mongodb.exchange.secondary.port'),
     config.get('Exchange.mongodb.exchange.db'));
-
 var exchangeMongoOptions = {
     user: config.get('Exchange.mongodb.exchange.user'),
     pass: config.get('Exchange.mongodb.exchange.pwd'),
@@ -143,15 +143,21 @@ function default_condition(response){
  * 5) Logs response w/ winning bid metadata
  * 6) Sends win-notice via HTTP GET to winning bidder
 */
-app.get('/pub', function(request, response){
+app.get(urls.PUB_PATH, function(request, response){
     // first check if incoming request has necessary query params
-    if (!request.query.hasOwnProperty('placement_id')){
+    if (!request.query.hasOwnProperty('pid')){
         response.status(404).send("ERROR 404: Page not found - no placement_id parameter provided.");
         logger.error('GET Request sent to /pub with no placement_id');
         return
     }
 
-    publisherModels.getNestedObjectById(request.query.placement_id,'Placement', function(err, placement){
+    // parse using PubURL object in case you ever want to add additional
+    // query params, encoding, parsing, etc.
+    var pubURL = urls.PubURL(hostname);
+    var secure = (request.protocol == 'https');
+    pubURL.parse(request.query, secure);
+
+    publisherModels.getNestedObjectById(pubURL.pid,'Placement', function(err, placement){
         if (err) {
             default_condition(response);
         } else {
@@ -176,9 +182,9 @@ app.get('/rtb_test', function(request, response){
     // fake the referer address just for show in the request data object
     request.headers.referer = 'http://' + request.headers['host'] + request.originalUrl;
     // generate request data again just for show
-    request.query = {"placement_id": "54f8df2e6bcc85d9653becfb"};
+    request.query = {"pid": "54f8df2e6bcc85d9653becfb"};
     var qs = querystring.encode(request.query);
-    publisherModels.getNestedObjectById(request.query.placement_id,'Placement', function(err, placement) {
+    publisherModels.getNestedObjectById(request.query.pid,'Placement', function(err, placement) {
         if (err) logger.error(err);
         auctioneer._create_single_imp_bid_request(placement, request, function (err, request_data) {
             var fn = jade.compileFile('./templates/rtb_test.jade', null);
