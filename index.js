@@ -1,9 +1,12 @@
 //first-party packages
 var br = require('./lib/bid_requests');
 var node_utils = require('cliques_node_utils');
+var urls = node_utils.urls;
 var cliques_cookies = node_utils.cookies;
 var logging = require('./lib/exchange_logging');
-var db = node_utils.mongodb;
+var bigQueryUtils = node_utils.google.bigQueryUtils;
+var googleAuth = node_utils.google.auth;
+var tags = node_utils.tags;
 
 //third-party packages
 //have to require PMX before express to enable monitoring
@@ -22,8 +25,7 @@ var config = require('config');
 
 /* -------------------  NOTES ------------------- */
 
-//TODO: invocation-tags (client-side shit),
-//TODO: unit tests (some simple ones)
+//TODO: invocation-placements (client-side shit),
 
 /* -------------------  LOGGING ------------------- */
 
@@ -32,29 +34,22 @@ var logfile = path.join(
     'logs',
     util.format('adexchange_%s.log',node_utils.dates.isoFormatUTCNow())
 );
-
 var devNullLogger = logger = new logging.ExchangeCLogger({transports: []});
 if (process.env.NODE_ENV != 'test'){
-    var logger = new logging.ExchangeCLogger({
+    var bq_config = bigQueryUtils.loadFullBigQueryConfig('./bq_config.json');
+    var eventStreamer = new bigQueryUtils.BigQueryEventStreamer(bq_config,
+        googleAuth.DEFAULT_JWT_SECRETS_FILE,20);
+    logger = new logging.ExchangeCLogger({
         transports: [
             new (winston.transports.Console)({timestamp:true}),
-            new (winston.transports.File)({filename:logfile,timestamp:true})
+            new (winston.transports.File)({filename:logfile,timestamp:true}),
+            new (winston.transports.RedisEventCache)({ eventStreamer: eventStreamer})
         ]
     });
 } else {
     // just for running unittests so whole HTTP log isn't written to console
     logger = devNullLogger;
 }
-
-/* -------------------  DEBUGGING/PROFILING ------------------- */
-
-//// Only enable Nodetime in local test env
-//if (process.env.NODE_ENV == 'local-test'){
-//    require('nodetime').profile({
-//        accountKey: config.get('Exchange.nodetime.license_key'),
-//        appName: config.get('Exchange.nodetime.appName')
-//    });
-//}
 
 /* ------------------- MONGODB - EXCHANGE DB ------------------- */
 
@@ -63,16 +58,18 @@ var exchangeMongoURI = util.format('mongodb://%s:%s/%s',
     config.get('Exchange.mongodb.exchange.secondary.host'),
     config.get('Exchange.mongodb.exchange.secondary.port'),
     config.get('Exchange.mongodb.exchange.db'));
-
 var exchangeMongoOptions = {
     user: config.get('Exchange.mongodb.exchange.user'),
     pass: config.get('Exchange.mongodb.exchange.pwd'),
     auth: {authenticationDatabase: config.get('Exchange.mongodb.exchange.db')}
 };
-var EXCHANGE_CONNECTION = db.createConnectionWrapper(exchangeMongoURI, exchangeMongoOptions, function(err, logstring){
+var EXCHANGE_CONNECTION = node_utils.mongodb.createConnectionWrapper(exchangeMongoURI, exchangeMongoOptions, function(err, logstring){
     if (err) throw err;
     logger.info(logstring);
 });
+
+// create PublisherModels instance to access Publisher DB models
+var publisherModels = new node_utils.mongodb.models.PublisherModels(EXCHANGE_CONNECTION,{readPreference: 'secondary'});
 
 /* ------------------- MONGODB - USER DB ------------------- */
 
@@ -87,10 +84,17 @@ var userMongoOptions = {
     pass: config.get('Exchange.mongodb.user.pwd'),
     auth: {authenticationDatabase: config.get('Exchange.mongodb.user.db')}
 };
-var USER_CONNECTION = db.createConnectionWrapper(userMongoURI, userMongoOptions, function(err, logstring){
+var USER_CONNECTION = node_utils.mongodb.createConnectionWrapper(userMongoURI, userMongoOptions, function(err, logstring){
     if (err) throw err;
     logger.info(logstring);
 });
+
+/* ------------------- HOSTNAME VARIABLES ------------------- */
+
+// hostname var is external hostname, not localhost
+var hostname = config.get('Exchange.http.external.hostname');
+var external_port = config.get('Exchange.http.external.port');
+
 
 /* ------------------- EXPRESS MIDDLEWARE ------------------- */
 
@@ -119,11 +123,11 @@ app.use(function(req, res, next){
 
 var bidder_timeout = config.get('Exchange.bidder_timeout');
 var bidders = config.get('Exchange.bidders');
-var auctioneer = new br.Auctioneer(bidders,bidder_timeout,EXCHANGE_CONNECTION,logger);
+var auctioneer = new br.Auctioneer(bidders,bidder_timeout,logger);
 
 /*  ------------------- HTTP Endpoints  ------------------- */
 
-app.listen(app.get('port'), function() {
+var server = app.listen(app.get('port'), function(){
     logger.info("Cliques Ad Exchange is running at localhost:" + app.get('port'));
 });
 
@@ -146,28 +150,38 @@ function default_condition(response){
  * 5) Logs response w/ winning bid metadata
  * 6) Sends win-notice via HTTP GET to winning bidder
 */
-app.get('/pub', function(request, response){
-    // log request, add uuid metadata
-    //node_utils.logging.log_request(logger,request,
-    //    { 'req_uuid':request.old_uuid, 'uuid': request.uuid });
-
+app.get(urls.PUB_PATH, function(request, response){
     // first check if incoming request has necessary query params
-    if (!request.query.hasOwnProperty('tag_id')){
-        response.status(404).send("ERROR 404: Page not found - no tag_id parameter provided.");
-        logger.error('GET Request sent to /pub with no tag_id');
+    if (!request.query.hasOwnProperty('pid')){
+        response.status(404).send("ERROR 404: Page not found - no placement_id parameter provided.");
+        logger.error('GET Request sent to /pub with no placement_id');
         return
     }
-    auctioneer.main(request, response, function(err, winning_bid){
+
+    // parse using PubURL object in case you ever want to add additional
+    // query params, encoding, parsing, etc.
+    var pubURL = new urls.PubURL(hostname, external_port);
+    var secure = (request.protocol == 'https');
+    pubURL.parse(request.query, secure);
+
+    publisherModels.getNestedObjectById(pubURL.pid,'Placement', function(err, placement){
         if (err) {
             default_condition(response);
         } else {
-            response.status(200).json(winning_bid);
+            auctioneer.main(placement, request, response, function(err, winning_bid){
+                if (err) {
+                    default_condition(response);
+                } else {
+                    response.send(winning_bid.adm);
+                }
+                logger.httpResponse(response);
+                logger.auction(err, placement, request, response, winning_bid);
+            });
         }
-        logger.httpResponse(response);
-        logger.impression(err, request, response, winning_bid);
-        //
     });
 });
+
+/* ----------------------- TEST PAGES ---------------------- */
 
 /**
  * RTB Test page, just a placeholder
@@ -176,14 +190,30 @@ app.get('/rtb_test', function(request, response){
     // fake the referer address just for show in the request data object
     request.headers.referer = 'http://' + request.headers['host'] + request.originalUrl;
     // generate request data again just for show
-    request.query = {"tag_id": "54f8df2e6bcc85d9653becfb"};
+    request.query = {"pid": "54f8df2e6bcc85d9653becfb"};
     var qs = querystring.encode(request.query);
-    auctioneer._create_single_imp_bid_request(request,function(err,request_data){
-        var fn = jade.compileFile('./templates/rtb_test.jade', null);
-        var html = fn({request_data: JSON.stringify(request_data, null, 2), qs: qs});
-        node_utils.logging.log_request(logger, request);
+    publisherModels.getNestedObjectById(request.query.pid,'Placement', function(err, placement) {
+        if (err) logger.error(err);
+        auctioneer._create_single_imp_bid_request(placement, request, function (err, request_data) {
+            var fn = jade.compileFile('./templates/rtb_test.jade', null);
+            var html = fn({request_data: JSON.stringify(request_data, null, 2), qs: qs});
+            response.send(html);
+        });
+    });
+});
+
+/**
+ * RTB Test page, just a placeholder
+ */
+app.get('/test_ad', function(request, response){
+    // generate request data again just for show
+    var pubTag = new tags.PubTag(hostname, { port: external_port });
+    publisherModels.getNestedObjectById('54f8df2e6bcc85d9653becfb','Placement', function(err, placement) {
+        if (err) console.log(err);
+        var rendered = pubTag.render(placement);
+        var fn = jade.compileFile('./templates/test_ad.jade', null);
+        var html = fn({ pubtag: rendered });
         response.send(html);
-        node_utils.logging.log_response(logger, response);
     });
 });
 

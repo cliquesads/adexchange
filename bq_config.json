@@ -1,0 +1,59 @@
+{
+  "event_tables":{
+    "AUCTION": {
+      "tableId": "auctions",
+      "datasetId": "ad_events",
+      "schema": {
+        "fields": [
+          {"name": "hostname", "type": "STRING"},
+          {"name": "level","type": "STRING"},
+          {"name": "msg","type": "STRING"},
+          {"name": "tstamp","type": "TIMESTAMP"},
+          {"name": "uuid","type": "STRING"},
+          {"name": "auctionId","type": "STRING"},
+          {"name": "bidobjid","type": "STRING"},
+          {"name": "bidid","type": "STRING"},
+          {"name": "impid","type": "STRING"},
+          {"name": "adid","type": "STRING"},
+          {"name": "bid1","type": "FLOAT"},
+          {"name": "clearprice","type": "FLOAT"},
+          {"name": "placement", "type": "STRING"},
+          {"name": "page", "type": "STRING"},
+          {"name": "site", "type": "STRING"},
+          {"name": "publisher", "type": "STRING"},
+          {"name": "pub_clique", "type": "STRING"}
+        ]
+      }
+    },
+    "WIN-NOTICE": {
+      "tableId": "win_notices",
+      "datasetId": "ad_events",
+      "schema": {
+        "fields": [
+          {"name": "hostname", "type": "STRING"},
+          {"name": "level","type": "STRING"},
+          {"name": "msg","type": "STRING"},
+          {"name": "tstamp","type": "TIMESTAMP"},
+          {"name": "nurl","type": "STRING"},
+          {"name": "statusCode","type": "INTEGER"}
+        ]
+      }
+    },
+    "BID-RESPONSE": {
+      "tableId": "bid_responses",
+      "datasetId": "ad_events",
+      "schema": {
+        "fields": [
+          {"name": "hostname", "type": "STRING"},
+          {"name": "level","type": "STRING"},
+          {"name": "msg","type": "STRING"},
+          {"name": "tstamp","type": "TIMESTAMP"},
+          {"name": "bidder_url","type": "STRING"},
+          {"name": "auctionId","type": "STRING"},
+          {"name": "statusCode","type": "INTEGER"},
+          {"name": "body","type": "STRING"}
+        ]
+      }
+    }
+  }
+}

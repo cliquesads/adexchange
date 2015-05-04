@@ -121,3 +121,21 @@ describe('Auctioneer', function(){
         });
     });
 });
+
+var googleutils = require('cliques_node_utils').google;
+var jwt_credentials_file = googleutils.auth.DEFAULT_JWT_SECRETS_FILE;
+var bq_scope = 'https://www.googleapis.com/auth/bigquery';
+
+describe('Google API', function(){
+    describe('Authentication', function(){
+        describe('JWT Token', function(){
+            it('Can authenticate using default JWT credentials stored in '+
+            jwt_credentials_file + ' with BigQuery scope', function(done){
+                googleutils.auth.getJWTAuthClient(jwt_credentials_file,bq_scope,function(err, auth){
+                    if (err) return done(err);
+                    return done();
+                });
+            });
+        });
+    });
+});
