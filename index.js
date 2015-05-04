@@ -92,8 +92,8 @@ var USER_CONNECTION = node_utils.mongodb.createConnectionWrapper(userMongoURI, u
 /* ------------------- HOSTNAME VARIABLES ------------------- */
 
 // hostname var is external hostname, not localhost
-var hostname = config.get('Exchange.http.hostname');
-var port = (config.get('Exchange.http.port') || 5000);
+var hostname = config.get('Exchange.http.external.hostname');
+var external_port = config.get('Exchange.http.external.port');
 
 
 /* ------------------- EXPRESS MIDDLEWARE ------------------- */
@@ -160,7 +160,7 @@ app.get(urls.PUB_PATH, function(request, response){
 
     // parse using PubURL object in case you ever want to add additional
     // query params, encoding, parsing, etc.
-    var pubURL = new urls.PubURL(hostname, port);
+    var pubURL = new urls.PubURL(hostname, external_port);
     var secure = (request.protocol == 'https');
     pubURL.parse(request.query, secure);
 
@@ -205,11 +205,9 @@ app.get('/rtb_test', function(request, response){
 /**
  * RTB Test page, just a placeholder
  */
-var exchange_hostname = config.get('Exchange.http.hostname');
-var exchange_port = config.get('Exchange.http.port');
 app.get('/test_ad', function(request, response){
     // generate request data again just for show
-    var pubTag = new tags.PubTag(exchange_hostname, { port: exchange_port });
+    var pubTag = new tags.PubTag(hostname, { port: external_port });
     publisherModels.getNestedObjectById('54f8df2e6bcc85d9653becfb','Placement', function(err, placement) {
         if (err) console.log(err);
         var rendered = pubTag.render(placement);
