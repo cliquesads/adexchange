@@ -6,6 +6,7 @@ var cliques_cookies = node_utils.cookies;
 var logging = require('./lib/exchange_logging');
 var bigQueryUtils = node_utils.google.bigQueryUtils;
 var googleAuth = node_utils.google.auth;
+var tags = node_utils.tags;
 
 //third-party packages
 //have to require PMX before express to enable monitoring
@@ -171,7 +172,7 @@ app.get(urls.PUB_PATH, function(request, response){
                 if (err) {
                     default_condition(response);
                 } else {
-                    response.status(200).json(winning_bid);
+                    response.send(winning_bid.adm);
                 }
                 logger.httpResponse(response);
                 logger.auction(err, placement, request, response, winning_bid);
@@ -179,6 +180,8 @@ app.get(urls.PUB_PATH, function(request, response){
         }
     });
 });
+
+/* ----------------------- TEST PAGES ---------------------- */
 
 /**
  * RTB Test page, just a placeholder
@@ -196,6 +199,23 @@ app.get('/rtb_test', function(request, response){
             var html = fn({request_data: JSON.stringify(request_data, null, 2), qs: qs});
             response.send(html);
         });
+    });
+});
+
+/**
+ * RTB Test page, just a placeholder
+ */
+var exchange_hostname = config.get('Exchange.http.hostname');
+var exchange_port = config.get('Exchange.http.port');
+app.get('/test_ad', function(request, response){
+    // generate request data again just for show
+    var pubTag = new tags.PubTag(exchange_hostname, { port: exchange_port });
+    publisherModels.getNestedObjectById('54f8df2e6bcc85d9653becfb','Placement', function(err, placement) {
+        if (err) console.log(err);
+        var rendered = pubTag.render(placement);
+        var fn = jade.compileFile('./templates/test_ad.jade', null);
+        var html = fn({ pubtag: rendered });
+        response.send(html);
     });
 });
 
