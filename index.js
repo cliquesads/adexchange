@@ -172,7 +172,10 @@ app.get(urls.PUB_PATH, function(request, response){
                 if (err) {
                     default_condition(response);
                 } else {
-                    response.send(winning_bid.adm);
+                    //TODO: this is pretty hacky and makes me uncomfortable but I just don't have time to
+                    // find a better way now
+                    var markup = urls.expandURLMacros(winning_bid.adm, { impid: winning_bid.impid, pid: pubURL.pid });
+                    response.send(markup);
                 }
                 logger.httpResponse(response);
                 logger.auction(err, placement, request, response, winning_bid);
