@@ -137,7 +137,7 @@ app.get('/', function(request, response) {
 
 function default_condition(response){
     // TODO: make a DB call here to get default
-    return response.json({"adm": config.get('Exchange.defaultcondition.300x250'), "default": true}).status(200);
+    return response.send(config.get('Exchange.defaultcondition.300x250'));
 }
 
 /**
