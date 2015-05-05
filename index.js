@@ -137,7 +137,7 @@ app.get('/', function(request, response) {
 
 function default_condition(response){
     // TODO: make a DB call here to get default
-    return response.json({"adm": config.get('Exchange.defaultcondition.300x250'), "default": true}).status(200);
+    return response.send(config.get('Exchange.defaultcondition.300x250'));
 }
 
 /**
@@ -172,7 +172,10 @@ app.get(urls.PUB_PATH, function(request, response){
                 if (err) {
                     default_condition(response);
                 } else {
-                    response.send(winning_bid.adm);
+                    //TODO: this is pretty hacky and makes me uncomfortable but I just don't have time to
+                    // find a better way now
+                    var markup = urls.expandURLMacros(winning_bid.adm, { impid: winning_bid.impid, pid: pubURL.pid });
+                    response.send(markup);
                 }
                 logger.httpResponse(response);
                 logger.auction(err, placement, request, response, winning_bid);
