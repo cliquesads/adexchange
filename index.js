@@ -123,7 +123,6 @@ app.use(function(req, res, next){
 
 var bidder_timeout = config.get('Exchange.bidder_timeout');
 var bidders = config.get('Exchange.bidders');
-logger.info(JSON.stringify(bidders,null,2));
 var auctioneer = new br.Auctioneer(bidders,bidder_timeout,logger);
 
 /*  ------------------- HTTP Endpoints  ------------------- */
