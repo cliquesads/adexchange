@@ -164,7 +164,7 @@ app.get(urls.PUB_PATH, function(request, response){
     var secure = (request.protocol == 'https');
     pubURL.parse(request.query, secure);
 
-    publisherModels.getNestedObjectById(pubURL.pid,'Placement', function(err, placement){
+    publisherModels.getNestedObjectById(pubURL.pid,'Placement', 'sites.clique', function(err, placement){
         if (err) {
             default_condition(response);
         } else {
