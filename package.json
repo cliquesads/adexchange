@@ -20,7 +20,7 @@
     "maxmind": "^0.5.4",
     "mobile-detect": "^0.4.3",
     "mongodb": "~1.4.x",
-    "mongoose": "~3.8.x",
+    "mongoose": "^4.0.4",
     "pmx": "^0.3.3",
     "redis": "^0.12.1",
     "request": "^2.53.0",
