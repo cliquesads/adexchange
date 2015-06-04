@@ -55,8 +55,8 @@ if (process.env.NODE_ENV != 'test'){
 
 // Build the connection string
 var exchangeMongoURI = util.format('mongodb://%s:%s/%s',
-    config.get('Exchange.mongodb.exchange.secondary.host'),
-    config.get('Exchange.mongodb.exchange.secondary.port'),
+    config.get('Exchange.mongodb.exchange.primary.host'),
+    config.get('Exchange.mongodb.exchange.primary.port'),
     config.get('Exchange.mongodb.exchange.db'));
 var exchangeMongoOptions = {
     user: config.get('Exchange.mongodb.exchange.user'),
@@ -69,7 +69,7 @@ var EXCHANGE_CONNECTION = node_utils.mongodb.createConnectionWrapper(exchangeMon
 });
 
 // create PublisherModels instance to access Publisher DB models
-var publisherModels = new node_utils.mongodb.models.PublisherModels(EXCHANGE_CONNECTION,{readPreference: 'secondary'});
+var publisherModels = new node_utils.mongodb.models.PublisherModels(EXCHANGE_CONNECTION,{read: 'secondaryPreferred'});
 
 /* ------------------- MONGODB - USER DB ------------------- */
 
