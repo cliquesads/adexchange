@@ -63,7 +63,7 @@ describe('Auctioneer', function(){
     var bidders = config.get('Exchange.bidders');
     var timeout = config.get('Exchange.bidder_timeout');
     var db = mongoose.createConnection(index.exchangeMongoURI, index.exchangeMongoOptions);
-    var auctioneer = new br.Auctioneer(bidders, timeout, db, index.devNullLogger);
+    var auctioneer = new br.Auctioneer(bidders, timeout, index.devNullLogger);
 
     describe('MultiSeatBids', function(){
         it("Should return highest bid as the winner, with clearprice of second highest bid + $0.01", function () {
@@ -83,7 +83,7 @@ describe('Auctioneer', function(){
                 }]
                 }
             ];
-            auctioneer.runAuction(test_bids_single_obj, function (err, winning_bid) {
+            auctioneer.runAuction({},test_bids_single_obj, function (err, winning_bid) {
                 assert.equal(winning_bid.id, 68110451);
                 assert.equal(winning_bid.clearprice, 5.95);
             });
@@ -114,7 +114,7 @@ describe('Auctioneer', function(){
                     [{"seat": 8583,"bid": [{"id": 48705300,"impid": "231159286491452","price": 6.58}]}]
                 }
             ];
-            auctioneer.runAuction(test_bids_multi_obj, function (err, winning_bid){
+            auctioneer.runAuction({},test_bids_multi_obj, function (err, winning_bid){
                 assert.equal(winning_bid.id, 40577572);
                 assert.equal(winning_bid.clearprice, 6.59);
             });
