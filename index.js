@@ -132,6 +132,7 @@ setTimeout(cliquesModels.getAllBidders(function(err, res){
     if (err) return logger.error('ERROR retrieving bidders from Mongo: ' + err);
     bidders = res;
     auctioneer = new br.BottomUpAuctioneer(bidders,bidder_timeout,logger);
+    logger.info('Got new bidder config, updated Auctioneer: ' + JSON.stringify(bidders))
 }), bidder_lookup_interval);
 
 /*  ------------------- HTTP Endpoints  ------------------- */
