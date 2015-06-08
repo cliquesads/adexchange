@@ -70,6 +70,8 @@ var EXCHANGE_CONNECTION = node_utils.mongodb.createConnectionWrapper(exchangeMon
 
 // create PublisherModels instance to access Publisher DB models
 var publisherModels = new node_utils.mongodb.models.PublisherModels(EXCHANGE_CONNECTION,{read: 'secondaryPreferred'});
+var cliquesModels = new node_utils.mongodb.models.CliquesModels(EXCHANGE_CONNECTION,{read: 'secondaryPreferred'});
+
 
 /* ------------------- MONGODB - USER DB ------------------- */
 
@@ -122,9 +124,15 @@ app.use(function(req, res, next){
 /* --------------------- AUCTIONEER -----------------------*/
 
 var bidder_timeout = config.get('Exchange.bidder_timeout');
-var bidders = config.get('Exchange.bidders');
-//var auctioneer = new br.Auctioneer(bidders,bidder_timeout,logger);
-var auctioneer = new br.BottomUpAuctioneer(bidders,bidder_timeout,logger);
+var bidder_lookup_interval  = config.get('Exchange.bidder_lookup_interval');
+var bidders;
+var auctioneer;
+// Refresh bidder config every n milliseconds automatically
+setTimeout(cliquesModels.getAllBidders(function(err, res){
+    if (err) return logger.error('ERROR retrieving bidders from Mongo: ' + err);
+    bidders = res;
+    auctioneer = new br.BottomUpAuctioneer(bidders,bidder_timeout,logger);
+}), bidder_lookup_interval);
 
 /*  ------------------- HTTP Endpoints  ------------------- */
 
