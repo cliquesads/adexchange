@@ -128,7 +128,7 @@ var bidder_lookup_interval  = config.get('Exchange.bidder_lookup_interval');
 var bidders;
 var auctioneer;
 // Refresh bidder config every n milliseconds automatically
-setTimeout(cliquesModels.getAllBidders(function(err, res){
+setInterval(cliquesModels.getAllBidders(function(err, res){
     if (err) return logger.error('ERROR retrieving bidders from Mongo: ' + err);
     bidders = res;
     auctioneer = new br.BottomUpAuctioneer(bidders,bidder_timeout,logger);
