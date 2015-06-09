@@ -128,12 +128,15 @@ var bidder_lookup_interval  = config.get('Exchange.bidder_lookup_interval');
 var bidders;
 var auctioneer;
 // Refresh bidder config every n milliseconds automatically
-setInterval(cliquesModels.getAllBidders(function(err, res){
-    if (err) return logger.error('ERROR retrieving bidders from Mongo: ' + err);
-    bidders = res;
-    auctioneer = new br.BottomUpAuctioneer(bidders,bidder_timeout,logger);
-    logger.info('Got new bidder config, updated Auctioneer: ' + JSON.stringify(bidders))
-}), bidder_lookup_interval);
+function updateAuctioneer(){
+    cliquesModels.getAllBidders(function(err, res){
+        if (err) return logger.error('ERROR retrieving bidders from Mongo: ' + err);
+        bidders = res;
+        auctioneer = new br.BottomUpAuctioneer(bidders,bidder_timeout,logger);
+        logger.info('Got new bidder config, updated Auctioneer: ' + JSON.stringify(bidders));
+    });
+}
+setInterval(updateAuctioneer, bidder_lookup_interval);
 
 /*  ------------------- HTTP Endpoints  ------------------- */
 
