@@ -124,9 +124,9 @@ app.use(function(req, res, next){
 /* --------------------- AUCTIONEER -----------------------*/
 
 var bidder_timeout = config.get('Exchange.bidder_timeout');
-var bidder_lookup_interval  = config.get('Exchange.bidder_lookup_interval');
 var bidders;
 var auctioneer;
+
 // Refresh bidder config every n milliseconds automatically
 function updateAuctioneer(){
     cliquesModels.getAllBidders(function(err, res){
@@ -136,7 +136,13 @@ function updateAuctioneer(){
         logger.info('Got new bidder config, updated Auctioneer: ' + JSON.stringify(bidders));
     });
 }
-setInterval(updateAuctioneer, bidder_lookup_interval);
+
+//var bidder_lookup_interval  = config.get('Exchange.bidder_lookup_interval');
+// Only pull bidder config once on startup for now because
+// these setInterval calls were causing too much loop delay
+// for my comfort.
+//setInterval(updateAuctioneer, bidder_lookup_interval);
+updateAuctioneer();
 
 /*  ------------------- HTTP Endpoints  ------------------- */
 
