@@ -55,8 +55,8 @@ if (process.env.NODE_ENV != 'test'){
 
 // Build the connection string
 var exchangeMongoURI = util.format('mongodb://%s:%s/%s',
-    config.get('Exchange.mongodb.exchange.secondary.host'),
-    config.get('Exchange.mongodb.exchange.secondary.port'),
+    config.get('Exchange.mongodb.exchange.primary.host'),
+    config.get('Exchange.mongodb.exchange.primary.port'),
     config.get('Exchange.mongodb.exchange.db'));
 var exchangeMongoOptions = {
     user: config.get('Exchange.mongodb.exchange.user'),
@@ -69,7 +69,9 @@ var EXCHANGE_CONNECTION = node_utils.mongodb.createConnectionWrapper(exchangeMon
 });
 
 // create PublisherModels instance to access Publisher DB models
-var publisherModels = new node_utils.mongodb.models.PublisherModels(EXCHANGE_CONNECTION,{readPreference: 'secondary'});
+var publisherModels = new node_utils.mongodb.models.PublisherModels(EXCHANGE_CONNECTION,{read: 'secondaryPreferred'});
+var cliquesModels = new node_utils.mongodb.models.CliquesModels(EXCHANGE_CONNECTION,{read: 'secondaryPreferred'});
+
 
 /* ------------------- MONGODB - USER DB ------------------- */
 
@@ -122,8 +124,25 @@ app.use(function(req, res, next){
 /* --------------------- AUCTIONEER -----------------------*/
 
 var bidder_timeout = config.get('Exchange.bidder_timeout');
-var bidders = config.get('Exchange.bidders');
-var auctioneer = new br.Auctioneer(bidders,bidder_timeout,logger);
+var bidders;
+var auctioneer;
+
+// Refresh bidder config every n milliseconds automatically
+function updateAuctioneer(){
+    cliquesModels.getAllBidders(function(err, res){
+        if (err) return logger.error('ERROR retrieving bidders from Mongo: ' + err);
+        bidders = res;
+        auctioneer = new br.BottomUpAuctioneer(bidders,bidder_timeout,logger);
+        logger.info('Got new bidder config, updated Auctioneer: ' + JSON.stringify(bidders));
+    });
+}
+
+//var bidder_lookup_interval  = config.get('Exchange.bidder_lookup_interval');
+// Only pull bidder config once on startup for now because
+// these setInterval calls were causing too much loop delay
+// for my comfort.
+//setInterval(updateAuctioneer, bidder_lookup_interval);
+updateAuctioneer();
 
 /*  ------------------- HTTP Endpoints  ------------------- */
 
@@ -164,7 +183,7 @@ app.get(urls.PUB_PATH, function(request, response){
     var secure = (request.protocol == 'https');
     pubURL.parse(request.query, secure);
 
-    publisherModels.getNestedObjectById(pubURL.pid,'Placement', function(err, placement){
+    publisherModels.getNestedObjectById(pubURL.pid,'Placement', 'sites.clique', function(err, placement){
         if (err) {
             default_condition(response);
         } else {
