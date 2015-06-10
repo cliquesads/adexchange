@@ -60,10 +60,9 @@ describe('WebServer', function(){
 
 describe('Auctioneer', function(){
 
-    var bidders = config.get('Exchange.bidders');
+    //var bidders = config.get('Exchange.bidders');
     var timeout = config.get('Exchange.bidder_timeout');
-    var db = mongoose.createConnection(index.exchangeMongoURI, index.exchangeMongoOptions);
-    var auctioneer = new br.Auctioneer(bidders, timeout, index.devNullLogger);
+    var auctioneer = new br.Auctioneer({}, timeout, index.devNullLogger);
 
     describe('MultiSeatBids', function(){
         it("Should return highest bid as the winner, with clearprice of second highest bid + $0.01", function () {
@@ -121,6 +120,77 @@ describe('Auctioneer', function(){
         });
     });
 });
+
+describe('BottomUpAuctioneer', function(){
+
+    var timeout = config.get('Exchange.bidder_timeout');
+    var auctioneer = new br.BottomUpAuctioneer({}, timeout, index.devNullLogger);
+    var test_bids = [
+        {
+            "id": "7367a940-c526-11e4-9d22-a5269bd04333", "bidid": 2029191609, "cur": "USD", "seatbid": [
+            {
+                "seat": "Bottom Clique",
+                "bid": [
+                    {"id": 5597483, "impid": "230429219812962", "price": 5.94}
+                ]
+            },
+            {
+                "seat": "One Level Up",
+                "bid": [
+                    {"id": 4795597483, "impid": "230429219812962", "price": 20}
+                ]
+            },
+            {
+                "seat": "Two Levels Up",
+                "bid": []
+            },
+            {
+                "seat": "Three Levels Up",
+                "bid": [
+                    {"id": 53889597483, "impid": "230429219812962", "price": 5.94},
+                    {"id": 55974833297, "impid": "230429219812962", "price": 9}
+                ]
+            }
+        ]
+        }
+    ];
+    var bottom_placement = {
+        parent_site: {
+            clique: {
+                id: 'Bottom Clique',
+                parent: 'One Level Up',
+                ancestors: ['One Level Up', 'Two Levels Up', 'Three Levels Up']
+            }
+        }
+    };
+    var two_up_placement = {
+        parent_site: {
+            clique: {
+                id: 'Two Levels Up',
+                parent: 'Three Levels Up',
+                ancestors: ['Three Levels Up']
+            }
+        }
+    };
+
+    describe('Bottom Up Auction', function(){
+        it("Bid Request from Bottom placement should return winner from Bottom Clique ", function () {
+
+            auctioneer.runAuction(bottom_placement,test_bids, function (err, winning_bid) {
+                assert.equal(winning_bid.id, 5597483);
+                assert.equal(winning_bid.clearprice, 5.94);
+            });
+        });
+        it("Bid Request from two-up placement should return winner from third-up, if two-up clique has no bids", function () {
+            auctioneer.runAuction(two_up_placement,test_bids, function (err, winning_bid) {
+                assert.equal(winning_bid.id, 55974833297);
+                assert.equal(winning_bid.clearprice, 5.95);
+            });
+        });
+    });
+});
+
+
 
 var googleutils = require('cliques_node_utils').google;
 var jwt_credentials_file = googleutils.auth.DEFAULT_JWT_SECRETS_FILE;
