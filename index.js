@@ -34,11 +34,12 @@ var logfile = path.join(
     'logs',
     util.format('adexchange_%s.log',node_utils.dates.isoFormatUTCNow())
 );
+var chunkSize = config.get('Exchange.redis_event_cache.chunkSize');
 var devNullLogger = logger = new logging.ExchangeCLogger({transports: []});
 if (process.env.NODE_ENV != 'test'){
     var bq_config = bigQueryUtils.loadFullBigQueryConfig('./bq_config.json');
     var eventStreamer = new bigQueryUtils.BigQueryEventStreamer(bq_config,
-        googleAuth.DEFAULT_JWT_SECRETS_FILE,20);
+        googleAuth.DEFAULT_JWT_SECRETS_FILE,chunkSize);
     logger = new logging.ExchangeCLogger({
         transports: [
             new (winston.transports.Console)({timestamp:true}),
