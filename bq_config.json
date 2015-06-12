@@ -21,7 +21,14 @@
           {"name": "page", "type": "STRING"},
           {"name": "site", "type": "STRING"},
           {"name": "publisher", "type": "STRING"},
-          {"name": "pub_clique", "type": "STRING"}
+          {"name": "pub_clique", "type": "STRING"},
+          {"name": "lat", "type": "FLOAT"},
+          {"name": "lon", "type": "FLOAT"},
+          {"name": "country", "type": "STRING"},
+          {"name": "region", "type": "STRING"},
+          {"name": "city", "type": "STRING"},
+          {"name": "zip", "type": "STRING"},
+          {"name": "metro", "type": "STRING"}
         ]
       }
     },

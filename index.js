@@ -188,7 +188,7 @@ app.get(urls.PUB_PATH, function(request, response){
         if (err) {
             default_condition(response);
         } else {
-            auctioneer.main(placement, request, response, function(err, winning_bid){
+            auctioneer.main(placement, request, response, function(err, winning_bid, bid_request){
                 if (err) {
                     default_condition(response);
                 } else {
@@ -198,7 +198,7 @@ app.get(urls.PUB_PATH, function(request, response){
                     response.send(markup);
                 }
                 logger.httpResponse(response);
-                logger.auction(err, placement, request, response, winning_bid);
+                logger.auction(err, placement, request, response, winning_bid, bid_request);
             });
         }
     });
