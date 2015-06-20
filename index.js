@@ -112,7 +112,9 @@ app.set('port', (process.env['EXCHANGE-WEBSERVER-PORT'] || config.get('Exchange.
 app.use(express.static(__dirname + '/public'));
 
 // custom cookie-parsing middleware
-var cookie_handler = new cliques_cookies.CookieHandler(config.get('Exchange.cookies.expirationdays'),USER_CONNECTION);
+var days_expiration = config.get('Cookies.expirationdays');
+var domain = config.get('Cookies.domain');
+var cookie_handler = new cliques_cookies.CookieHandler(days_expiration,domain,USER_CONNECTION);
 app.use(function(req, res, next){
     cookie_handler.get_or_set_uuid(req, res, next);
 });
