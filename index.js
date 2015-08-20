@@ -157,9 +157,11 @@ app.get('/', function(request, response) {
     response.send('Welcome to the Cliques Ad Exchange');
 });
 
-function default_condition(response){
+function default_condition(placement, response){
     // TODO: make a DB call here to get default
-    return response.send(config.get('Exchange.defaultcondition.300x250'));
+    var dimensions = placement.w + 'x' + placement.h;
+    var config_key = 'Exchange.defaultcondition.'+dimensions;
+    return response.send(config.get(config_key));
 }
 
 /**
@@ -192,7 +194,7 @@ app.get(urls.PUB_PATH, function(request, response){
         } else {
             auctioneer.main(placement, request, response, function(err, winning_bid, bid_request){
                 if (err) {
-                    default_condition(response);
+                    default_condition(placement, response);
                 } else {
                     //TODO: this is pretty hacky and makes me uncomfortable but I just don't have time to
                     // find a better way now
@@ -215,7 +217,7 @@ app.get('/rtb_test', function(request, response){
     // fake the referer address just for show in the request data object
     request.headers.referer = 'http://' + request.headers['host'] + request.originalUrl;
     // generate request data again just for show
-    request.query = {"pid": "54f8df2e6bcc85d9653becfb"};
+    request.query = {"pid": "55d66175a9f9bf9d040232fc"};
     var qs = querystring.encode(request.query);
     publisherModels.getNestedObjectById(request.query.pid,'Placement', function(err, placement) {
         if (err) logger.error(err);
@@ -233,7 +235,7 @@ app.get('/rtb_test', function(request, response){
 app.get('/test_ad', function(request, response){
     // generate request data again just for show
     var pubTag = new tags.PubTag(hostname, { port: external_port });
-    publisherModels.getNestedObjectById('54f8df2e6bcc85d9653becfb','Placement', function(err, placement) {
+    publisherModels.getNestedObjectById('55d66148afba0f9504bc5a86','Placement', function(err, placement) {
         if (err) console.log(err);
         var rendered = pubTag.render(placement);
         var fn = jade.compileFile('./templates/test_ad.jade', null);
