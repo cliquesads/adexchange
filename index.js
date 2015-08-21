@@ -161,7 +161,13 @@ function default_condition(placement, response){
     // TODO: make a DB call here to get default
     var dimensions = placement.w + 'x' + placement.h;
     var config_key = 'Exchange.defaultcondition.'+dimensions;
-    return response.send(config.get(config_key));
+    var markup;
+    try {
+        markup = config.get(config_key);
+    } catch (e){
+        response.send('');
+    }
+    return response.send(markup);
 }
 
 /**
