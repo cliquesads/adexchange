@@ -157,13 +157,15 @@ app.get('/', function(request, response) {
     response.send('Welcome to the Cliques Ad Exchange');
 });
 
-function default_condition(placement, response){
+function default_condition(bid_request,placement,response){
     // TODO: make a DB call here to get default
     var dimensions = placement.w + 'x' + placement.h;
     var config_key = 'Exchange.defaultcondition.'+dimensions;
     var markup;
     try {
         markup = config.get(config_key);
+        // TODO: Assumes single impression in bid request, make more generic
+        markup = urls.expandURLMacros(markup, { impid: bid_request.imp[0].id, pid: placement.id })
     } catch (e){
         response.send('');
     }
@@ -196,11 +198,13 @@ app.get(urls.PUB_PATH, function(request, response){
 
     publisherModels.getNestedObjectById(pubURL.pid,'Placement', 'sites.clique', function(err, placement){
         if (err) {
-            default_condition(response);
+            // Fail if placement can't even be looked up.
+            response.status(404).send("ERROR 404: Placement ID " + pubURL.pid + " not found.");
+            logger.error("GET Request send to /pub with invalid placement_id: " + pubURL.pid);
         } else {
             auctioneer.main(placement, request, response, function(err, winning_bid, bid_request){
                 if (err) {
-                    default_condition(placement, response);
+                    default_condition(bid_request, placement, response);
                 } else {
                     //TODO: this is pretty hacky and makes me uncomfortable but I just don't have time to
                     // find a better way now
