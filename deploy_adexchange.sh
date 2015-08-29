@@ -21,5 +21,7 @@ if [ -z "$running" ]; then
     # start in cluster mode
     pm2 start index.js --name "$processname" -i 0
 else
-    pm2 gracefulReload "$processname"
+    pm2 stop "$processname"
+    node clear_redis_event_cache.js
+    pm2 start "$processname"
 fi
