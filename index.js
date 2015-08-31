@@ -1,5 +1,6 @@
 //first-party packages
 var br = require('./lib/bid_requests');
+var DefaultConditionHandler = require('./lib/default_conditions').DefaultConditionHandler;
 var node_utils = require('cliques_node_utils');
 var urls = node_utils.urls;
 var cliques_cookies = node_utils.cookies;
@@ -7,6 +8,7 @@ var logging = require('./lib/exchange_logging');
 var bigQueryUtils = node_utils.google.bigQueryUtils;
 var googleAuth = node_utils.google.auth;
 var tags = node_utils.tags;
+
 
 //third-party packages
 //have to require PMX before express to enable monitoring
@@ -98,7 +100,6 @@ var USER_CONNECTION = node_utils.mongodb.createConnectionWrapper(userMongoURI, u
 var hostname = config.get('Exchange.http.external.hostname');
 var external_port = config.get('Exchange.http.external.port');
 
-
 /* ------------------- EXPRESS MIDDLEWARE ------------------- */
 
 // inside request-ip middleware handler
@@ -146,6 +147,21 @@ function updateAuctioneer(){
 // for my comfort.
 //setInterval(updateAuctioneer, bidder_lookup_interval);
 updateAuctioneer();
+
+/*  ------------------- DefaultConditionHandler Init ------------------- */
+
+var adserver_hostname = config.get('AdServer.http.external.hostname');
+var adserver_port = config.get('AdServer.http.external.port');
+var defaultConditionHandler;
+function updateDefaultHandler(){
+    cliquesModels.getAllDefaultAdvertisers(function(err, defaultAdvertisers){
+        if (err) return logger.error('ERROR retrieving default advertiser config from Mongo: ' + err);
+        defaultConditionHandler = new DefaultConditionHandler(defaultAdvertisers, adserver_hostname, adserver_port);
+        logger.info('Got new default advertiser config, updated defaultConditionHandler');
+    });
+}
+
+updateDefaultHandler();
 
 /*  ------------------- HTTP Endpoints  ------------------- */
 
@@ -204,7 +220,14 @@ app.get(urls.PUB_PATH, function(request, response){
         } else {
             auctioneer.main(placement, request, response, function(err, winning_bid, bid_request){
                 if (err) {
-                    default_condition(bid_request, placement, response);
+                    // handle default condition if error
+                    defaultConditionHandler.main(bid_request, placement, secure, function(err, markup){
+                        if (err){
+                            response.status(404).send("ERROR 404: Cannot get default creative");
+                            logger.error('ERROR retrieving markup for default condition: ' + err);
+                        }
+                        response.send(markup);
+                    });
                 } else {
                     //TODO: this is pretty hacky and makes me uncomfortable but I just don't have time to
                     // find a better way now
