@@ -7,8 +7,8 @@ var cliques_cookies = node_utils.cookies;
 var logging = require('./lib/exchange_logging');
 var bigQueryUtils = node_utils.google.bigQueryUtils;
 var googleAuth = node_utils.google.auth;
+var pubsub = node_utils.google.pubsub;
 var tags = node_utils.tags;
-
 
 //third-party packages
 //have to require PMX before express to enable monitoring
@@ -163,6 +163,47 @@ function updateDefaultHandler(){
 
 updateDefaultHandler();
 
+/*  ------------------- PubSub Init & Subscription Hooks------------------- */
+
+// Here's where the config methods actually get hooked to signals from
+// the outside world via Google PubSub api.
+
+if (process.env.NODE_ENV == 'local-test'){
+    var pubsub_options = {
+        projectId: 'mimetic-codex-781',
+        test: true,
+        logger: logger
+    }
+} else {
+    pubsub_options = {projectId: 'mimetic-codex-781'};
+}
+var exchangeConfigPubSub = new pubsub.ExchangeConfigPubSub(pubsub_options);
+exchangeConfigPubSub.subscriptions.updateBidderConfig(function(err, subscription){
+    if (err) throw new Error('Error creating subscription to updateBidderConfig topic: ' + err);
+    // message listener
+    subscription.on('message', function(message){
+        if (err) throw new Error(err);
+        logger.info('Received updateBidderConfig message, updating auctioneer...');
+        updateAuctioneer();
+    });
+    subscription.on('error', function(err){
+        logger.error(err);
+    });
+});
+
+exchangeConfigPubSub.subscriptions.updateDefaultsConfig(function(err, subscription){
+    if (err) throw new Error('Error creating subscription to updateDefaultsConfig topic: ' + err);
+    // message listener
+    subscription.on('message', function(message){
+        if (err) throw new Error(err);
+        logger.info('Received updateDefaultsConfig message, updating defaultHandler...');
+        updateDefaultHandler();
+    });
+    subscription.on('error', function(err){
+        logger.error(err);
+    });
+});
+
 /*  ------------------- HTTP Endpoints  ------------------- */
 
 var server = app.listen(app.get('port'), function(){
@@ -172,21 +213,6 @@ var server = app.listen(app.get('port'), function(){
 app.get('/', function(request, response) {
     response.send('Welcome to the Cliques Ad Exchange');
 });
-
-function default_condition(bid_request,placement,response){
-    // TODO: make a DB call here to get default
-    var dimensions = placement.w + 'x' + placement.h;
-    var config_key = 'Exchange.defaultcondition.'+dimensions;
-    var markup;
-    try {
-        markup = config.get(config_key);
-        // TODO: Assumes single impression in bid request, make more generic
-        markup = urls.expandURLMacros(markup, { impid: bid_request.imp[0].id, pid: placement.id })
-    } catch (e){
-        response.send('');
-    }
-    return response.send(markup);
-}
 
 /**
  * Main endpoint to handle incoming impression requests & respond with winning ad markup.
