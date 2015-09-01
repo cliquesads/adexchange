@@ -163,45 +163,12 @@ function updateDefaultHandler(){
 
 updateDefaultHandler();
 
-/*  ------------------- PubSub Init & Subscription Hooks------------------- */
+/*  ------------------- Listener for SIGUSR2, used to update exchange configs------------------- */
 
-// Here's where the config methods actually get hooked to signals from
-// the outside world via Google PubSub api.
-
-if (process.env.NODE_ENV == 'local-test'){
-    var pubsub_options = {
-        projectId: 'mimetic-codex-781',
-        test: true,
-        logger: logger
-    }
-} else {
-    pubsub_options = {projectId: 'mimetic-codex-781'};
-}
-var exchangeConfigPubSub = new pubsub.ExchangeConfigPubSub(pubsub_options);
-exchangeConfigPubSub.subscriptions.updateBidderConfig(function(err, subscription){
-    if (err) throw new Error('Error creating subscription to updateBidderConfig topic: ' + err);
-    // message listener
-    subscription.on('message', function(message){
-        if (err) throw new Error(err);
-        logger.info('Received updateBidderConfig message, updating auctioneer...');
-        updateAuctioneer();
-    });
-    subscription.on('error', function(err){
-        logger.error(err);
-    });
-});
-
-exchangeConfigPubSub.subscriptions.updateDefaultsConfig(function(err, subscription){
-    if (err) throw new Error('Error creating subscription to updateDefaultsConfig topic: ' + err);
-    // message listener
-    subscription.on('message', function(message){
-        if (err) throw new Error(err);
-        logger.info('Received updateDefaultsConfig message, updating defaultHandler...');
-        updateDefaultHandler();
-    });
-    subscription.on('error', function(err){
-        logger.error(err);
-    });
+process.on('SIGUSR2', function() {
+    logger.info('Received SIGUSR2, updating auctioneer & defaultHandler...');
+    updateAuctioneer();
+    updateDefaultHandler();
 });
 
 /*  ------------------- HTTP Endpoints  ------------------- */

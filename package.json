@@ -21,6 +21,7 @@
     "mobile-detect": "^0.4.3",
     "mongodb": "~1.4.x",
     "mongoose": "^4.0.4",
+    "pm2": "^0.14.7",
     "pmx": "^0.3.3",
     "redis": "^0.12.1",
     "request": "^2.53.0",
