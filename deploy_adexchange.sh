@@ -25,3 +25,12 @@ else
     node clear_redis_event_cache.js
     pm2 start "$processname"
 fi
+
+configprocessname='config_listener'
+configlistenerrunning=$(pm2 list -m | grep "$configprocessname")
+if [ -z "$configlistenerrunning" ]; then
+    # start single listener
+    pm2 start config_listener.js --name "$configprocessname" -i 1
+else
+    pm2 reload "$configprocessname"
+fi
