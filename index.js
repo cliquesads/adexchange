@@ -205,7 +205,7 @@ app.get(urls.PUB_PATH, function(request, response){
     var secure = (request.protocol == 'https');
     pubURL.parse(request.query, secure);
 
-    publisherModels.getNestedObjectById(pubURL.pid,'Placement', 'sites.clique', function(err, placement){
+    publisherModels.getNestedObjectById(pubURL.pid,'Placement', ['sites.pages.clique','sites.clique'], function(err, placement){
         if (err) {
             // Fail if placement can't even be looked up.
             response.status(404).send("ERROR 404: Placement ID " + pubURL.pid + " not found.");
