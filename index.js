@@ -14,7 +14,10 @@ var tags = node_utils.tags;
 //have to require PMX before express to enable monitoring
 var pmx = require('pmx').init();
 var express = require('express');
+var https = require('https');
+var http = require('http');
 var app = express();
+var fs = require('fs');
 var querystring = require('querystring');
 var jade = require('jade');
 var requestIp = require('request-ip');
@@ -109,7 +112,8 @@ app.use(function(req, res, next) {
 });
 app.use(cookieParser());
 app.use(responseTime());
-app.set('port', (process.env['EXCHANGE-WEBSERVER-PORT'] || config.get('Exchange.http.port') || 5000));
+app.set('http_port', config.get('Exchange.http.port') || 5000);
+app.set('https_port', config.get('Exchange.https.port') || 3000);
 app.use(express.static(__dirname + '/public'));
 
 // custom cookie-parsing middleware
@@ -173,9 +177,13 @@ process.on('SIGUSR2', function() {
 
 /*  ------------------- HTTP Endpoints  ------------------- */
 
-var server = app.listen(app.get('port'), function(){
-    logger.info("Cliques Ad Exchange is running at localhost:" + app.get('port'));
-});
+http.createServer(app).listen(app.get('http_port'));
+https.createServer({
+    key: fs.readFileSync('./config/cert/star_cliquesads_com.key'),
+    cert: fs.readFileSync('./config/cert/star_cliquesads_com.crt'),
+    ca: fs.readFileSync('./config/cert/DigiCertCA.crt')
+}, app).listen(app.get('https_port'));
+
 
 app.get('/', function(request, response) {
     response.send('Welcome to the Cliques Ad Exchange');
