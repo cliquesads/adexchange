@@ -100,8 +100,10 @@ var USER_CONNECTION = node_utils.mongodb.createConnectionWrapper(userMongoURI, u
 /* ------------------- HOSTNAME VARIABLES ------------------- */
 
 // hostname var is external hostname, not localhost
-var hostname = config.get('Exchange.http.external.hostname');
-var external_port = config.get('Exchange.http.external.port');
+var http_hostname = config.get('Exchange.http.external.hostname');
+var http_external_port = config.get('Exchange.http.external.port');
+var https_hostname = config.get('Exchange.https.external.hostname');
+var https_external_port = config.get('Exchange.https.external.port');
 
 /* ------------------- EXPRESS MIDDLEWARE ------------------- */
 
@@ -155,12 +157,13 @@ updateAuctioneer();
 /*  ------------------- DefaultConditionHandler Init ------------------- */
 
 var adserver_hostname = config.get('AdServer.http.external.hostname');
+var adserver_secure_hostname = config.get('AdServer.https.external.hostname');
 var adserver_port = config.get('AdServer.http.external.port');
 var defaultConditionHandler;
 function updateDefaultHandler(){
     cliquesModels.getAllDefaultAdvertisers(function(err, defaultAdvertisers){
         if (err) return logger.error('ERROR retrieving default advertiser config from Mongo: ' + err);
-        defaultConditionHandler = new DefaultConditionHandler(defaultAdvertisers, adserver_hostname, adserver_port);
+        defaultConditionHandler = new DefaultConditionHandler(defaultAdvertisers, adserver_hostname, adserver_secure_hostname, 5400);
         logger.info('Got new default advertiser config, updated defaultConditionHandler');
     });
 }
@@ -190,6 +193,19 @@ app.get('/', function(request, response) {
 });
 
 /**
+ * It's too complicated now to figure out how to toggle creative markup
+ * for http/https in the bidder, so this is a horrible hack to do it before
+ * rendering the ad tag instead.  Basically just replacing non-secure for
+ * secure adserver host in ad markup returned from bidder.
+ * @param adm
+ */
+var horribleHttpsAdMarkupHack = function(adm){
+    var httpAdserverUrl = 'http://' + adserver_hostname;
+    var httpsAdserverUrl = 'https://' + adserver_secure_hostname;
+    adm.replace(httpAdserverUrl, httpsAdserverUrl);
+};
+
+/**
  * Main endpoint to handle incoming impression requests & respond with winning ad markup.
  * Does the following, in order:
  * 1) Logs incoming request
@@ -209,8 +225,9 @@ app.get(urls.PUB_PATH, function(request, response){
 
     // parse using PubURL object in case you ever want to add additional
     // query params, encoding, parsing, etc.
-    var pubURL = new urls.PubURL(hostname, external_port);
     var secure = (request.protocol == 'https');
+    var external_port = secure ? https_external_port : http_external_port;
+    var pubURL = new urls.PubURL(http_hostname, https_hostname, external_port);
     pubURL.parse(request.query, secure);
 
     publisherModels.getNestedObjectById(pubURL.pid,'Placement', ['sites.pages.clique','sites.clique'], function(err, placement){
@@ -232,7 +249,8 @@ app.get(urls.PUB_PATH, function(request, response){
                 } else {
                     //TODO: this is pretty hacky and makes me uncomfortable but I just don't have time to
                     // find a better way now
-                    var markup = urls.expandURLMacros(winning_bid.adm, { impid: winning_bid.impid, pid: pubURL.pid });
+                    var adm = secure ? horribleHttpsAdMarkupHack(winning_bid.adm) : winning_bid.adm;
+                    var markup = urls.expandURLMacros(adm, { impid: winning_bid.impid, pid: pubURL.pid });
                     response.send(markup);
                 }
                 logger.httpResponse(response);
@@ -268,7 +286,11 @@ app.get('/rtb_test', function(request, response){
  */
 app.get('/test_ad', function(request, response){
     // generate request data again just for show
-    var pubTag = new tags.PubTag(hostname, { port: external_port });
+    var secure = request.protocol === 'https';
+    var hostname = secure ? https_hostname : http_hostname;
+    var external_port = secure ? https_external_port : http_external_port;
+    var pubTag = new tags.PubTag(hostname, { port: external_port, secure: request.protocol === 'https' });
+
     publisherModels.getNestedObjectById('55d66148afba0f9504bc5a86','Placement', function(err, placement) {
         if (err) console.log(err);
         var rendered = pubTag.render(placement);
