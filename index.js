@@ -7,12 +7,10 @@ var cliques_cookies = node_utils.cookies;
 var logging = require('./lib/exchange_logging');
 var bigQueryUtils = node_utils.google.bigQueryUtils;
 var googleAuth = node_utils.google.auth;
-var pubsub = node_utils.google.pubsub;
 var tags = node_utils.tags;
 
 //third-party packages
 //have to require PMX before express to enable monitoring
-var pmx = require('pmx').init();
 var express = require('express');
 var https = require('https');
 var http = require('http');
