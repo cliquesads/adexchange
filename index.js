@@ -163,7 +163,7 @@ var defaultConditionHandler;
 function updateDefaultHandler(){
     cliquesModels.getAllDefaultAdvertisers(function(err, defaultAdvertisers){
         if (err) return logger.error('ERROR retrieving default advertiser config from Mongo: ' + err);
-        defaultConditionHandler = new DefaultConditionHandler(defaultAdvertisers, adserver_hostname, adserver_secure_hostname, 5400);
+        defaultConditionHandler = new DefaultConditionHandler(defaultAdvertisers, adserver_hostname, adserver_secure_hostname, adserver_port);
         logger.info('Got new default advertiser config, updated defaultConditionHandler');
     });
 }
