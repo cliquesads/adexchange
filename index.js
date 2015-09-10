@@ -202,6 +202,7 @@ app.get('/', function(request, response) {
 var horribleHttpsAdMarkupHack = function(adm){
     var httpAdserverUrl = 'http://' + adserver_hostname;
     var httpsAdserverUrl = 'https://' + adserver_secure_hostname;
+    console.log(adm);
     adm.replace(httpAdserverUrl, httpsAdserverUrl);
 };
 
