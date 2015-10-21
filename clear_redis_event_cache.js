@@ -14,4 +14,4 @@ var redisEventCache = new transports.RedisEventCache({ eventStreamer: eventStrea
 redisEventCache.clearZombieEventCaches(function(err){
     if (err) return console.error(err);
     process.exit(0);
-});
+}, 500);
