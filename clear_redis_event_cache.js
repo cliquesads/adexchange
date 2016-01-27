@@ -7,7 +7,12 @@ var bigQueryUtils = node_utils.google.bigQueryUtils;
 var googleAuth = node_utils.google.auth;
 
 
-var bq_config = bigQueryUtils.loadFullBigQueryConfig('./bq_config.json');
+if (process.env.NODE_ENV === 'production'){
+    var bq_config = bigQueryUtils.loadFullBigQueryConfig('./bq_config.json');
+} else {
+    // use dev config if not running in production
+    bq_config = bigQueryUtils.loadFullBigQueryConfig('./bq_config_dev.json','/google/bq_config_dev.json');
+}
 var eventStreamer = new bigQueryUtils.BigQueryEventStreamer(bq_config,
     googleAuth.DEFAULT_JWT_SECRETS_FILE,5);
 var redisEventCache = new transports.RedisEventCache({ eventStreamer: eventStreamer});
