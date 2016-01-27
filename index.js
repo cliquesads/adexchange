@@ -40,7 +40,13 @@ var logfile = path.join(
 var chunkSize = config.get('Exchange.redis_event_cache.chunkSize');
 var devNullLogger = logger = new logging.ExchangeCLogger({transports: []});
 if (process.env.NODE_ENV != 'test'){
-    var bq_config = bigQueryUtils.loadFullBigQueryConfig('./bq_config.json');
+    // set up production logger
+    if (process.env.NODE_ENV === 'production'){
+        var bq_config = bigQueryUtils.loadFullBigQueryConfig('./bq_config.json');
+    } else {
+        // use dev config if not running in production
+        bq_config = bigQueryUtils.loadFullBigQueryConfig('./bq_config_dev.json');
+    }
     var eventStreamer = new bigQueryUtils.BigQueryEventStreamer(bq_config,
         googleAuth.DEFAULT_JWT_SECRETS_FILE,chunkSize);
     logger = new logging.ExchangeCLogger({
