@@ -135,6 +135,13 @@ app.use(function(req, res, next){
     logger.httpRequestMiddleware(req, res, next);
 });
 
+// set CORS headers to allow Ajax ad requests
+app.use(function(req, res, next) {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    next();
+});
+
 /* --------------------- AUCTIONEER -----------------------*/
 
 var bidder_timeout = config.get('Exchange.bidder_timeout');
