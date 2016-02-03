@@ -176,11 +176,17 @@ app.get('/rtb_test', function(request, response){
  * RTB Test page, just a placeholder
  */
 app.get('/test_ad', function(request, response){
-    // generate request data again just for show
+
     var secure = request.protocol === 'https';
     var hostname = secure ? HTTPS_HOSTNAME : HTTP_HOSTNAME;
     var external_port = secure ? HTTPS_EXTERNAL_PORT : HTTP_EXTERNAL_PORT;
-    var pubTag = new tags.PubTag(hostname, { port: external_port, secure: request.protocol === 'https' });
+    var cloaderURL = secure ? config.get('Static.CLoader.https') : config.get('Static.CLoader.http');
+    var pubTag = new tags.PubTag(hostname, {
+        port: external_port,
+        secure: secure,
+        tag_type: 'javascript',
+        cloaderURL: cloaderURL
+    });
 
     publisherModels.getNestedObjectById('55d66148afba0f9504bc5a86','Placement', function(err, placement) {
         if (err) console.log(err);
