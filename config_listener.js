@@ -11,6 +11,7 @@
 
 var pm2 = require('pm2');
 var pubsub = require('cliques_node_utils').google.pubsub;
+var PROCESSNAME = process.env.NODE_ENV === 'production' ? 'adexchange' : 'adexchange_' + process.env.NODE_ENV;
 
 /*  ------------------- PubSub Init & Subscription Hooks------------------- */
 
@@ -41,6 +42,35 @@ function sendSignal(processname){
         });
     });
 }
+
+var sendMessage = exports.sendMessage = function(processname){
+    pm2.connect(function(err){
+        if (err) {
+            console.log(err);
+            pm2.disconnect();
+        }
+        pm2.list(function(err, list){
+            if (err) {
+                console.log(err);
+                pm2.disconnect();
+            }
+            for (var i=0; i < list.length; i++){
+                var process = list[i];
+                if (process.name === processname){
+                    pm2.sendDataToProcessId({
+                        type : 'process:msg',
+                        data : {
+                            test : 'worked!!'
+                        },
+                        id   : process.pm2_env.pm_id
+                    }, function(err, res){});
+                }
+            }
+        });
+        console.log('Message Sent, Exchange configs updated');
+        pm2.disconnect();
+    });
+};
 
 var exchangeConfigPubSub = new pubsub.ExchangeConfigPubSub(pubsub_options);
 exchangeConfigPubSub.subscriptions.updateBidderConfig(function(err, subscription){
