@@ -3,144 +3,35 @@ var br = require('./lib/bid_requests');
 var DefaultConditionHandler = require('./lib/default_conditions').DefaultConditionHandler;
 var node_utils = require('cliques_node_utils');
 var urls = node_utils.urls;
-var cliques_cookies = node_utils.cookies;
-var logging = require('./lib/exchange_logging');
-var bigQueryUtils = node_utils.google.bigQueryUtils;
-var googleAuth = node_utils.google.auth;
+var logger = require('./lib/logger');
 var tags = node_utils.tags;
+var connections = require('./lib/connections');
+var EXCHANGE_CONNECTION = connections.EXCHANGE_CONNECTION;
 
-//third-party packages
-//have to require PMX before express to enable monitoring
-var express = require('express');
-var https = require('https');
-var http = require('http');
-var app = express();
-var fs = require('fs');
+//Set up Express & create app
+var USER_CONNECTION = connections.USER_CONNECTION;
+var express = require('./lib/express');
+var app = express(USER_CONNECTION);
+
+//Other third party packages
 var querystring = require('querystring');
 var jade = require('jade');
-var requestIp = require('request-ip');
-var winston = require('winston');
 var path = require('path');
-var util = require('util');
-var cookieParser = require('cookie-parser');
-var responseTime = require('response-time');
 var config = require('config');
 
-/* -------------------  NOTES ------------------- */
-
-//TODO: invocation-placements (client-side shit),
-
-/* -------------------  LOGGING ------------------- */
-
-var logfile = path.join(
-    process.env['HOME'],
-    'logs',
-    util.format('adexchange_%s.log',node_utils.dates.isoFormatUTCNow())
-);
-var chunkSize = config.get('Exchange.redis_event_cache.chunkSize');
-var devNullLogger = logger = new logging.ExchangeCLogger({transports: []});
-if (process.env.NODE_ENV != 'test'){
-    // set up production logger
-    if (process.env.NODE_ENV === 'production'){
-        var bq_config = bigQueryUtils.loadFullBigQueryConfig('./bq_config.json');
-    } else {
-        // use dev config if not running in production
-        bq_config = bigQueryUtils.loadFullBigQueryConfig('./bq_config_dev.json','/google/bq_config_dev.json');
-    }
-    var eventStreamer = new bigQueryUtils.BigQueryEventStreamer(bq_config,
-        googleAuth.DEFAULT_JWT_SECRETS_FILE,chunkSize);
-    logger = new logging.ExchangeCLogger({
-        transports: [
-            new (winston.transports.Console)({timestamp:true}),
-            new (winston.transports.File)({filename:logfile,timestamp:true}),
-            new (winston.transports.RedisEventCache)({ eventStreamer: eventStreamer})
-        ]
-    });
-} else {
-    // just for running unittests so whole HTTP log isn't written to console
-    logger = devNullLogger;
-}
-
-/* ------------------- MONGODB - EXCHANGE DB ------------------- */
-
-// Build the connection string
-var exchangeMongoURI = util.format('mongodb://%s:%s/%s',
-    config.get('Exchange.mongodb.exchange.primary.host'),
-    config.get('Exchange.mongodb.exchange.primary.port'),
-    config.get('Exchange.mongodb.exchange.db'));
-var exchangeMongoOptions = {
-    user: config.get('Exchange.mongodb.exchange.user'),
-    pass: config.get('Exchange.mongodb.exchange.pwd'),
-    auth: {authenticationDatabase: config.get('Exchange.mongodb.exchange.db')}
-};
-var EXCHANGE_CONNECTION = node_utils.mongodb.createConnectionWrapper(exchangeMongoURI, exchangeMongoOptions, function(err, logstring){
-    if (err) throw err;
-    logger.info(logstring);
-});
+/* ------------------------- MODELS ----------------------------- */
 
 // create PublisherModels instance to access Publisher DB models
 var publisherModels = new node_utils.mongodb.models.PublisherModels(EXCHANGE_CONNECTION,{read: 'secondaryPreferred'});
 var cliquesModels = new node_utils.mongodb.models.CliquesModels(EXCHANGE_CONNECTION,{read: 'secondaryPreferred'});
 
-
-/* ------------------- MONGODB - USER DB ------------------- */
-
-// Build the connection string
-var userMongoURI = util.format('mongodb://%s:%s/%s',
-    config.get('Exchange.mongodb.user.primary.host'),
-    config.get('Exchange.mongodb.user.primary.port'),
-    config.get('Exchange.mongodb.user.db'));
-
-var userMongoOptions = {
-    user: config.get('Exchange.mongodb.user.user'),
-    pass: config.get('Exchange.mongodb.user.pwd'),
-    auth: {authenticationDatabase: config.get('Exchange.mongodb.user.db')}
-};
-var USER_CONNECTION = node_utils.mongodb.createConnectionWrapper(userMongoURI, userMongoOptions, function(err, logstring){
-    if (err) throw err;
-    logger.info(logstring);
-});
-
 /* ------------------- HOSTNAME VARIABLES ------------------- */
 
 // hostname var is external hostname, not localhost
-var http_hostname = config.get('Exchange.http.external.hostname');
-var http_external_port = config.get('Exchange.http.external.port');
-var https_hostname = config.get('Exchange.https.external.hostname');
-var https_external_port = config.get('Exchange.https.external.port');
-
-/* ------------------- EXPRESS MIDDLEWARE ------------------- */
-
-// inside request-ip middleware handler
-app.use(function(req, res, next) {
-    req.clientIp = requestIp.getClientIp(req); // on localhost > 127.0.0.1
-    next();
-});
-app.use(cookieParser());
-app.use(responseTime());
-app.set('http_port', config.get('Exchange.http.port') || 5000);
-app.set('https_port', config.get('Exchange.https.port') || 3000);
-app.use(express.static(__dirname + '/public'));
-
-// custom cookie-parsing middleware
-var days_expiration = config.get('Cookies.expirationdays');
-var domain = config.get('Cookies.domain');
-var cookie_handler = new cliques_cookies.CookieHandler(days_expiration,domain,USER_CONNECTION);
-app.use(function(req, res, next){
-    cookie_handler.get_or_set_uuid(req, res, next);
-});
-
-// custom HTTP request logging middleware
-app.use(function(req, res, next){
-    logger.httpRequestMiddleware(req, res, next);
-});
-
-// set CORS headers to allow Ajax ad requests
-app.use(function(req, res, next) {
-    res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-    next();
-});
+var HTTP_HOSTNAME = config.get('Exchange.http.external.hostname');
+var HTTP_EXTERNAL_PORT = config.get('Exchange.http.external.port');
+var HTTPS_HOSTNAME = config.get('Exchange.https.external.hostname');
+var HTTPS_EXTERNAL_PORT = config.get('Exchange.https.external.port');
 
 /* --------------------- AUCTIONEER -----------------------*/
 
@@ -158,11 +49,9 @@ function updateAuctioneer(){
     });
 }
 
-//var bidder_lookup_interval  = config.get('Exchange.bidder_lookup_interval');
 // Only pull bidder config once on startup for now because
 // these setInterval calls were causing too much loop delay
 // for my comfort.
-//setInterval(updateAuctioneer, bidder_lookup_interval);
 updateAuctioneer();
 
 /*  ------------------- DefaultConditionHandler Init ------------------- */
@@ -178,7 +67,6 @@ function updateDefaultHandler(){
         logger.info('Got new default advertiser config, updated defaultConditionHandler');
     });
 }
-
 updateDefaultHandler();
 
 /*  ------------------- Listener for SIGUSR2, used to update exchange configs------------------- */
@@ -190,14 +78,6 @@ process.on('SIGUSR2', function() {
 });
 
 /*  ------------------- HTTP Endpoints  ------------------- */
-
-http.createServer(app).listen(app.get('http_port'));
-https.createServer({
-    key: fs.readFileSync('./config/cert/star_cliquesads_com.key'),
-    cert: fs.readFileSync('./config/cert/star_cliquesads_com.crt'),
-    ca: fs.readFileSync('./config/cert/DigiCertCA.crt')
-}, app).listen(app.get('https_port'));
-
 
 app.get('/', function(request, response) {
     response.send('Welcome to the Cliques Ad Exchange');
@@ -237,8 +117,8 @@ app.get(urls.PUB_PATH, function(request, response){
     // parse using PubURL object in case you ever want to add additional
     // query params, encoding, parsing, etc.
     var secure = (request.protocol == 'https');
-    var external_port = secure ? https_external_port : http_external_port;
-    var pubURL = new urls.PubURL(http_hostname, https_hostname, external_port);
+    var external_port = secure ? HTTPS_EXTERNAL_PORT : HTTP_EXTERNAL_PORT;
+    var pubURL = new urls.PubURL(HTTP_HOSTNAME, HTTPS_HOSTNAME, external_port);
     pubURL.parse(request.query, secure);
 
     publisherModels.getNestedObjectById(pubURL.pid,'Placement', ['sites.pages.clique','sites.clique'], function(err, placement){
@@ -298,8 +178,8 @@ app.get('/rtb_test', function(request, response){
 app.get('/test_ad', function(request, response){
     // generate request data again just for show
     var secure = request.protocol === 'https';
-    var hostname = secure ? https_hostname : http_hostname;
-    var external_port = secure ? https_external_port : http_external_port;
+    var hostname = secure ? HTTPS_HOSTNAME : HTTP_HOSTNAME;
+    var external_port = secure ? HTTPS_EXTERNAL_PORT : HTTP_EXTERNAL_PORT;
     var pubTag = new tags.PubTag(hostname, { port: external_port, secure: request.protocol === 'https' });
 
     publisherModels.getNestedObjectById('55d66148afba0f9504bc5a86','Placement', function(err, placement) {
@@ -314,8 +194,8 @@ app.get('/test_ad', function(request, response){
 /* ------------------- EXPORTS mostly just for unittesting ------------------- */
 
 exports.app = app;
-exports.exchangeMongoURI = exchangeMongoURI;
-exports.exchangeMongoOptions = exchangeMongoOptions;
-exports.userMongoURI = userMongoURI;
-exports.userMongoOptions = userMongoOptions;
-exports.devNullLogger = devNullLogger;
+exports.exchangeMongoURI = connections.exchangeMongoURI;
+exports.exchangeMongoOptions = connections.exchangeMongoOptions;
+exports.userMongoURI = connections.userMongoURI;
+exports.userMongoOptions = connections.userMongoOptions;
+exports.devNullLogger = logger.devNullLogger;
