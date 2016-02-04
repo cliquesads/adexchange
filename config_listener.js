@@ -51,7 +51,6 @@ var _sendData = function(id, data, cb){
         if (err){
             console.log(err);
         }
-        console.log('Message sent to pm2 pm_id ' + id + '. Received response: ' + JSON.stringify(res));
         if (cb) return cb(err, res);
     });
 };
@@ -72,10 +71,13 @@ var sendDataToProcess = exports.sendDataToProcess = function(processname, data, 
         if (err) return _handleError(err);
         pm2.list(function(err, list){
             if (err) return _handleError(err);
+            var responses = [];
             async.each(list, function(process, callback){
                 if (process.name === processname){
                     var id = process.pm2_env.pm_id;
                     _sendData(id, data, function(err, res){
+                        var response = 'Message sent to pm2 pm_id ' + id + '. Received response: ' + JSON.stringify(res);
+                        responses.push(response);
                         callback(err);
                     });
                 }
@@ -83,7 +85,7 @@ var sendDataToProcess = exports.sendDataToProcess = function(processname, data, 
                 if (err) return _handleError(err);
                 pm2.disconnect();
                 if (cb){
-                    cb(null, true);
+                    cb(null, responses);
                 }
             });
         });
@@ -125,14 +127,23 @@ exchangeConfigPubSub.subscriptions.updateDefaultsConfig(function(err, subscripti
 /* ------------------- PMX HOOKS -------------------- */
 /* -------------------------------------------------- */
 
+function pmxCallback(reply, err, responses){
+    if (err){
+        return reply({ success: false, err: err });
+    }
+    var rString = responses.join('\n');
+    console.log(rString);
+    return reply({success: true, response: rString });
+}
+
 pmx.action('updateBidderConfig', function(reply){
-    sendDataToProcess(PROCESSNAME, { update: "bidderConfig" }, function(err, success){
-        return reply({ success: !err });
+    sendDataToProcess(PROCESSNAME, { update: "bidderConfig" }, function(err, responses){
+        pmxCallback(reply,err, responses);
     });
 });
 
 pmx.action('updateDefaultsConfig', function(reply){
-    sendDataToProcess(PROCESSNAME, { update: "defaultsConfig" }, function(err, success){
-        return reply({ success: !err });
+    sendDataToProcess(PROCESSNAME, { update: "defaultsConfig" }, function(err, responses){
+        pmxCallback(reply,err, responses);
     });
 });
