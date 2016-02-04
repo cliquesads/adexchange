@@ -10,6 +10,7 @@
  */
 
 var pm2 = require('pm2');
+var pmx = require('pmx');
 var pubsub = require('cliques_node_utils').google.pubsub;
 var async = require('async');
 var PROCESSNAME = process.env.NODE_ENV === 'production' ? 'adexchange' : 'adexchange_' + process.env.NODE_ENV;
@@ -61,17 +62,16 @@ var _sendData = function(id, data, cb){
  *
  * @type {Function}
  */
-var sendDataToProcess = exports.sendDataToProcess = function(processname, data){
+var sendDataToProcess = exports.sendDataToProcess = function(processname, data, cb){
+    function _handleError(err){
+        console.log(err);
+        cb(err);
+        pm2.disconnect();
+    }
     pm2.connect(function(err){
-        if (err) {
-            console.log(err);
-            pm2.disconnect();
-        }
+        if (err) return _handleError(err);
         pm2.list(function(err, list){
-            if (err) {
-                console.log(err);
-                pm2.disconnect();
-            }
+            if (err) return _handleError(err);
             async.each(list, function(process, callback){
                 if (process.name === processname){
                     var id = process.pm2_env.pm_id;
@@ -80,12 +80,19 @@ var sendDataToProcess = exports.sendDataToProcess = function(processname, data){
                     });
                 }
             }, function(err){
-                if (err) console.log(err);
+                if (err) return _handleError(err);
                 pm2.disconnect();
+                if (cb){
+                    cb(null, true);
+                }
             });
         });
     });
 };
+
+/* -------------------------------------------------- */
+/* ------------------- PUBSUB HOOKS ----------------- */
+/* -------------------------------------------------- */
 
 var exchangeConfigPubSub = new pubsub.ExchangeConfigPubSub(pubsub_options);
 exchangeConfigPubSub.subscriptions.updateBidderConfig(function(err, subscription){
@@ -111,5 +118,21 @@ exchangeConfigPubSub.subscriptions.updateDefaultsConfig(function(err, subscripti
     });
     subscription.on('error', function(err){
         console.log(err);
+    });
+});
+
+/* -------------------------------------------------- */
+/* ------------------- PMX HOOKS -------------------- */
+/* -------------------------------------------------- */
+
+pmx.action('updateBidderConfig', function(reply){
+    sendDataToProcess(PROCESSNAME, { update: "bidderConfig" }, function(err, success){
+        return reply({ success: !err });
+    });
+});
+
+pmx.action('updateDefaultsConfig', function(reply){
+    sendDataToProcess(PROCESSNAME, { update: "defaultsConfig" }, function(err, success){
+        return reply({ success: !err });
     });
 });
