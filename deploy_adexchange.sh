@@ -52,6 +52,7 @@ fi
 
 # run npm install to install any new dependencies
 npm install
+npm install cliques-node-utils
 
 # make sure cliques-config repo is cloned & pull any new commits
 if [ ! -d $HOME"/repositories/cliques-config" ]; then
