@@ -8,4 +8,7 @@ export NODE_ENV=production
 alias redis-cli=$HOME/redis-3.0.1/src/redis-cli
 
 #have to point to the right version of node, npm, pm2, mocha
-nvm use 0.12.0
+nvm install 5.0
+nvm use 5.0
+npm install pm2@1.0.0 -g
+pm2 update
