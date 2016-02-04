@@ -72,9 +72,17 @@ updateDefaultHandler();
 /*  ------------------- Listener for SIGUSR2, used to update exchange configs------------------- */
 
 process.on('message', function(packet) {
-    logger.info('Received message: ' + packet.data.test + 'updating auctioneer & defaultHandler...');
-    updateAuctioneer();
-    updateDefaultHandler();
+    logger.info('Received message: ' + JSON.stringify(packet.data));
+    switch (packet.data.update){
+        case 'bidderConfig':
+            updateAuctioneer();
+            break;
+        case 'defaultsConfig':
+            updateDefaultHandler();
+            break;
+        default:
+            console.log('Sorry, couldn\'t understand this `update` message');
+    }
 });
 
 /*  ------------------- HTTP Endpoints  ------------------- */

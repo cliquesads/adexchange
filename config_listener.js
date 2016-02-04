@@ -11,6 +11,7 @@
 
 var pm2 = require('pm2');
 var pubsub = require('cliques_node_utils').google.pubsub;
+var async = require('async');
 var PROCESSNAME = process.env.NODE_ENV === 'production' ? 'adexchange' : 'adexchange_' + process.env.NODE_ENV;
 
 /*  ------------------- PubSub Init & Subscription Hooks------------------- */
@@ -28,22 +29,39 @@ if (process.env.NODE_ENV == 'local-test'){
     pubsub_options = {projectId: 'mimetic-codex-781'};
 }
 
-function sendSignal(processname){
-    pm2.connect(function(err){
-        if (err) {
+/**
+ * Wrapper around very fragile pm2 API function to isolate logic
+ *
+ * As of 1.0.0, documentation for sendDataToProcessId is almost nonexistent, and
+ * what documentation exists is entirely wrong. This function exists solely to separate this
+ * likely-deprecated API call from its parent routine.
+ *
+ * @param id process id (pm_id)
+ * @param data data object to pass to sub process
+ * @param cb
+ * @private
+ */
+var _sendData = function(id, data, cb){
+    pm2.sendDataToProcessId(id, {
+        topic : 'process:msg',
+        data : data,
+        id   : id
+    }, function(err, res){
+        if (err){
             console.log(err);
-            pm2.disconnect();
         }
-        // TODO: Don't really like this, would like to use STDIN for child processes instead
-        pm2.sendSignalToProcessName('SIGUSR2', processname, function(err, ret){
-            if (err) console.log(err);
-            console.log('SIGUSR2 Signal Sent, Exchange configs updated');
-            pm2.disconnect();
-        });
+        console.log('Message sent to pm2 pm_id ' + id + '. Received response: ' + JSON.stringify(res));
+        if (cb) return cb(err, res);
     });
-}
+};
 
-var sendMessage = exports.sendMessage = function(processname){
+/**
+ * Gets all active pm2 processes for given processname and passes data object to them
+ * over 'process:msg' topic
+ *
+ * @type {Function}
+ */
+var sendDataToProcess = exports.sendDataToProcess = function(processname, data){
     pm2.connect(function(err){
         if (err) {
             console.log(err);
@@ -54,21 +72,18 @@ var sendMessage = exports.sendMessage = function(processname){
                 console.log(err);
                 pm2.disconnect();
             }
-            for (var i=0; i < list.length; i++){
-                var process = list[i];
+            async.each(list, function(process, callback){
                 if (process.name === processname){
-                    pm2.sendDataToProcessId({
-                        type : 'process:msg',
-                        data : {
-                            test : 'worked!!'
-                        },
-                        id   : process.pm2_env.pm_id
-                    }, function(err, res){});
+                    var id = process.pm2_env.pm_id;
+                    _sendData(id, data, function(err, res){
+                        callback(err);
+                    });
                 }
-            }
+            }, function(err){
+                if (err) console.log(err);
+                pm2.disconnect();
+            });
         });
-        console.log('Message Sent, Exchange configs updated');
-        pm2.disconnect();
     });
 };
 
@@ -79,7 +94,7 @@ exchangeConfigPubSub.subscriptions.updateBidderConfig(function(err, subscription
     subscription.on('message', function(message){
         if (err) throw new Error(err);
         console.log('Received updateBidderConfig message, updating adexchange configs...');
-        sendSignal('adexchange');
+        sendDataToProcess(PROCESSNAME, { update: "bidderConfig" });
     });
     subscription.on('error', function(err){
         console.log(err);
@@ -92,7 +107,7 @@ exchangeConfigPubSub.subscriptions.updateDefaultsConfig(function(err, subscripti
     subscription.on('message', function(message){
         if (err) throw new Error(err);
         console.log('Received updateDefaultsConfig message, updating adexchange configs...');
-        sendSignal('adexchange');
+        sendDataToProcess(PROCESSNAME, { update: "defaultsConfig" });
     });
     subscription.on('error', function(err){
         console.log(err);
