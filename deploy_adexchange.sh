@@ -41,28 +41,22 @@ while getopts ":e:" opt; do
 done
 # END environment parsing
 
+############### BEGIN Environment setup ################
+
 # Set proper environment variables now that env is set
 if [ "$env" == "production" ]; then
-    source ./activate_production.sh
     processname='adexchange'
 else
-    source ./activate_dev.sh
     processname='adexchange_dev'
 fi
+
+source ./activate_dev.sh -e "$env"
 
 # run npm install to install any new dependencies
 npm install
 npm install cliques-node-utils
 
-# make sure cliques-config repo is cloned & pull any new commits
-if [ ! -d $HOME"/repositories/cliques-config" ]; then
-    git clone git@github.com:cliquesads/cliques-config.git ../cliques-config
-    ln -s ../cliques-config config
-else
-    cd ../cliques-config
-    git pull
-    cd ../adexchange
-fi
+############## BEGIN Process Start / Restarts ##########
 
 # hackish, but guess it works. Use this to determine whether to start or restart
 # pm2 processes
@@ -70,7 +64,7 @@ running=$(pm2 list -m | grep "$processname")
 
 if [ -z "$running" ]; then
     # hook PM2 up to web monitoring with KeyMetrics
-    pm2 link k79qp6h0w795o48 l6aqtb33eaiqyry $HOSTNAME
+    pm2 link $KEYMETRICS_PRIVATE_KEY $KEYMETRICS_PUBLIC_KEY $HOSTNAME
     # start in cluster mode
     pm2 start index.js --name "$processname" -i 0
 else
