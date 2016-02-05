@@ -13,10 +13,8 @@ if [ ! -z $1 ]; then
   fi
 fi
 
-if [ -z "$REDIS_VERSION" ]; then
-    echo "ERROR: REDIS_VERSION environment variable not set. Please make sure you've 'source'd the right environment .cfg" >&2
-    exit 1
-fi
+# Now get proper environment variables for global package versions, etc.
+source ./config/environments/adexchange_environment.cfg
 
 #install redis from source to ensure latest version
 REDISPATH=$HOME'/redis-'$REDIS_VERSION

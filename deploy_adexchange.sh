@@ -50,7 +50,11 @@ else
     processname='adexchange_dev'
 fi
 
-source ./activate_dev.sh -e "$env"
+source activate_env.sh -e $env
+# if activate_env failed then bail
+if [ $? -ne 0 ]; then
+    exit $?
+fi
 
 # run npm install to install any new dependencies
 npm install

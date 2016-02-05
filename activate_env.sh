@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # usage text visible when --help flag passed in
-usage="$(basename "$0") -- Activate specific adexchange envioronment, setting all necessary environment variables.
+usage="activate_env.sh -- Activate specific adexchange envioronment, setting all necessary environment variables.
 
 where:
     -e      environment name (e.g. 'dev', 'production').  Default is 'production'
@@ -9,17 +9,18 @@ where:
 
 example:
     # activates the 'dev' environment
-    $ source $(basename "$0") -e dev
+    $ source activate_env.sh -e dev
 "
 
+OPTIND=1
 ######### BEGIN environment parsing ########
 # Default to production
 env="production"
 
-if [ ! -z $1 ]; then
-  if [ $1 == '--help' ]; then
+if [ ! -z $2 ]; then
+  if [ $2 == '--help' ]; then
     echo "$usage"
-    exit 0
+    return  0
   fi
 fi
 
@@ -29,7 +30,7 @@ while getopts ":e:" opt; do
     e)
       if [ "$OPTARG" != 'production' ] && [ "$OPTARG" != 'dev' ]; then
         echo "Invalid environment: $OPTARG.  Environment must be either 'dev' or 'production'"
-        exit 1
+        return 1
       else
         env="$OPTARG"
       fi
@@ -37,16 +38,17 @@ while getopts ":e:" opt; do
     \?)
       echo "Invalid option: -$OPTARG" >&2
       echo "$usage"
-      exit 1
+      return 1
       ;;
     :)
       echo "Environment flag -$OPTARG requires an argument (either 'dev' or 'production')" >&2
-      exit 1
+      return 1
       ;;
   esac
 done
 
 # now set NODE_ENV to env, setting NODE_ENV environment variable for subsequent scripts
+echo "Setting NODE_ENV=$env"
 export NODE_ENV="$env"
 
 # make sure cliques-config repo is cloned & pull any new commits
@@ -71,7 +73,7 @@ source ./config/environments/adexchange_environment.cfg
 REDISPATH=$HOME'/redis-'$REDIS_VERSION
 if [ ! -d $REDISPATH ]; then
     echo "ERROR: Redis $REDIS_VERSION install not found.  To fix this, run setup-redis.sh" >&2
-    exit 1
+    return 1
 else
     alias redis-cli=$HOME/redis-"$REDIS_VERSION"/src/redis-cli
 fi
@@ -80,26 +82,30 @@ fi
 source .nvm/nvm.sh
 if [ $? -eq 1 ]; then
     echo "ERROR: nvm not installed.  To fix this, run setup.sh" >&2
-    exit 1
+    return 1
+else
+    echo "Using NVM version $NVM_VERSION..."
 fi
 
 #have to point to the right version of node, npm, pm2, mocha
 nvm use $NODE_VERSION
 if [ $? -eq 1 ]; then
     echo "ERROR: Node $NODE_VERSION not installed.  To fix this, run setup.sh" >&2
-    exit 1
+    return 1
 fi
 
 # check if proper version of pm2 is installed in .nvm
 pm2version=$(pm2 -V)
 if [ $? -eq 127 ]; then
     echo "ERROR: pm2 not installed.  Please run setup.sh." >&2
-    exit 1
+    return 1
 fi
 
 if [ $pm2version != $PM2_VERSION ]; then
     echo "ERROR: Environment requires pm2 version $PM2_VERSION, but version $pm2version currently installed. To fix this, run setup.sh" >&2
-    exit 1
+    return 1
+else
+    echo "Using pm2 version $PM2_VERSION..."
 fi
 
-exit 0
+return 0
