@@ -11,8 +11,8 @@
 
 var pm2 = require('pm2');
 var pmx = require('pmx');
+var sendDataToProcessName = require('cliques_node_utils').pm2utils.sendDataToProcessName;
 var pubsub = require('cliques_node_utils').google.pubsub;
-var async = require('async');
 var PROCESSNAME = process.env.NODE_ENV === 'production' ? 'adexchange' : 'adexchange_' + process.env.NODE_ENV;
 
 /*  ------------------- PubSub Init & Subscription Hooks------------------- */
@@ -30,68 +30,6 @@ if (process.env.NODE_ENV == 'local-test'){
     pubsub_options = {projectId: 'mimetic-codex-781'};
 }
 
-/**
- * Wrapper around very fragile pm2 API function to isolate logic
- *
- * As of 1.0.0, documentation for sendDataToProcessId is almost nonexistent, and
- * what documentation exists is entirely wrong. This function exists solely to separate this
- * likely-deprecated API call from its parent routine.
- *
- * @param id process id (pm_id)
- * @param data data object to pass to sub process
- * @param cb
- * @private
- */
-var _sendData = function(id, data, cb){
-    pm2.sendDataToProcessId(id, {
-        topic : 'process:msg',
-        data : data,
-        id   : id
-    }, function(err, res){
-        if (err){
-            console.log(err);
-        }
-        if (cb) return cb(err, res);
-    });
-};
-
-/**
- * Gets all active pm2 processes for given processname and passes data object to them
- * over 'process:msg' topic
- *
- * @type {Function}
- */
-var sendDataToProcess = exports.sendDataToProcess = function(processname, data, cb){
-    function _handleError(err){
-        console.log(err);
-        cb(err);
-        pm2.disconnect();
-    }
-    pm2.connect(function(err){
-        if (err) return _handleError(err);
-        pm2.list(function(err, list){
-            if (err) return _handleError(err);
-            var responses = [];
-            async.each(list, function(process, callback){
-                if (process.name === processname){
-                    var id = process.pm2_env.pm_id;
-                    _sendData(id, data, function(err, res){
-                        var response = 'Message sent to pm2 pm_id ' + id + '. Received response: ' + JSON.stringify(res);
-                        responses.push(response);
-                        callback(err);
-                    });
-                }
-            }, function(err){
-                if (err) return _handleError(err);
-                pm2.disconnect();
-                if (cb){
-                    cb(null, responses);
-                }
-            });
-        });
-    });
-};
-
 /* -------------------------------------------------- */
 /* ------------------- PUBSUB HOOKS ----------------- */
 /* -------------------------------------------------- */
@@ -103,7 +41,7 @@ exchangeConfigPubSub.subscriptions.updateBidderConfig(function(err, subscription
     subscription.on('message', function(message){
         if (err) throw new Error(err);
         console.log('Received updateBidderConfig message, updating adexchange configs...');
-        sendDataToProcess(PROCESSNAME, { update: "bidderConfig" });
+        sendDataToProcessName(PROCESSNAME, { update: "bidderConfig" });
     });
     subscription.on('error', function(err){
         console.log(err);
@@ -116,7 +54,7 @@ exchangeConfigPubSub.subscriptions.updateDefaultsConfig(function(err, subscripti
     subscription.on('message', function(message){
         if (err) throw new Error(err);
         console.log('Received updateDefaultsConfig message, updating adexchange configs...');
-        sendDataToProcess(PROCESSNAME, { update: "defaultsConfig" });
+        sendDataToProcessName(PROCESSNAME, { update: "defaultsConfig" });
     });
     subscription.on('error', function(err){
         console.log(err);
@@ -137,13 +75,13 @@ function pmxCallback(reply, err, responses){
 }
 
 pmx.action('updateBidderConfig', function(reply){
-    sendDataToProcess(PROCESSNAME, { update: "bidderConfig" }, function(err, responses){
+    sendDataToProcessName(PROCESSNAME, { update: "bidderConfig" }, function(err, responses){
         pmxCallback(reply,err, responses);
     });
 });
 
 pmx.action('updateDefaultsConfig', function(reply){
-    sendDataToProcess(PROCESSNAME, { update: "defaultsConfig" }, function(err, responses){
+    sendDataToProcessName(PROCESSNAME, { update: "defaultsConfig" }, function(err, responses){
         pmxCallback(reply,err, responses);
     });
 });
