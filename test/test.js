@@ -192,7 +192,7 @@ describe('BottomUpAuctioneer', function(){
 
 
 
-var googleutils = require('cliques_node_utils').google;
+var googleutils = require('@cliques/cliques-node-utils').google;
 var jwt_credentials_file = googleutils.auth.DEFAULT_JWT_SECRETS_FILE;
 var bq_scope = 'https://www.googleapis.com/auth/bigquery';
 
