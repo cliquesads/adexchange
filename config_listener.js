@@ -10,7 +10,10 @@
  */
 
 var pm2 = require('pm2');
-var pubsub = require('cliques_node_utils').google.pubsub;
+var pmx = require('pmx');
+var sendDataToProcessName = require('@cliques/cliques-node-utils').pm2utils.sendDataToProcessName;
+var pubsub = require('@cliques/cliques-node-utils').google.pubsub;
+var PROCESSNAME = process.env.NODE_ENV === 'production' ? 'adexchange' : 'adexchange_' + process.env.NODE_ENV;
 
 /*  ------------------- PubSub Init & Subscription Hooks------------------- */
 
@@ -27,20 +30,9 @@ if (process.env.NODE_ENV == 'local-test'){
     pubsub_options = {projectId: 'mimetic-codex-781'};
 }
 
-function sendSignal(processname){
-    pm2.connect(function(err){
-        if (err) {
-            console.log(err);
-            pm2.disconnect();
-        }
-        // TODO: Don't really like this, would like to use STDIN for child processes instead
-        pm2.sendSignalToProcessName('SIGUSR2', processname, function(err, ret){
-            if (err) console.log(err);
-            console.log('SIGUSR2 Signal Sent, Exchange configs updated');
-            pm2.disconnect();
-        });
-    });
-}
+/* -------------------------------------------------- */
+/* ------------------- PUBSUB HOOKS ----------------- */
+/* -------------------------------------------------- */
 
 var exchangeConfigPubSub = new pubsub.ExchangeConfigPubSub(pubsub_options);
 exchangeConfigPubSub.subscriptions.updateBidderConfig(function(err, subscription){
@@ -49,7 +41,7 @@ exchangeConfigPubSub.subscriptions.updateBidderConfig(function(err, subscription
     subscription.on('message', function(message){
         if (err) throw new Error(err);
         console.log('Received updateBidderConfig message, updating adexchange configs...');
-        sendSignal('adexchange');
+        sendDataToProcessName(PROCESSNAME, { update: "bidderConfig" });
     });
     subscription.on('error', function(err){
         console.log(err);
@@ -62,9 +54,34 @@ exchangeConfigPubSub.subscriptions.updateDefaultsConfig(function(err, subscripti
     subscription.on('message', function(message){
         if (err) throw new Error(err);
         console.log('Received updateDefaultsConfig message, updating adexchange configs...');
-        sendSignal('adexchange');
+        sendDataToProcessName(PROCESSNAME, { update: "defaultsConfig" });
     });
     subscription.on('error', function(err){
         console.log(err);
+    });
+});
+
+/* -------------------------------------------------- */
+/* ------------------- PMX HOOKS -------------------- */
+/* -------------------------------------------------- */
+
+function pmxCallback(reply, err, responses){
+    if (err){
+        return reply({ success: false, err: err });
+    }
+    var rString = responses.join('\n');
+    console.log(rString);
+    return reply({success: true, response: rString });
+}
+
+pmx.action('updateBidderConfig', function(reply){
+    sendDataToProcessName(PROCESSNAME, { update: "bidderConfig" }, function(err, responses){
+        pmxCallback(reply,err, responses);
+    });
+});
+
+pmx.action('updateDefaultsConfig', function(reply){
+    sendDataToProcessName(PROCESSNAME, { update: "defaultsConfig" }, function(err, responses){
+        pmxCallback(reply,err, responses);
     });
 });
