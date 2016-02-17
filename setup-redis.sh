@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # usage text visible when --help flag passed in
 usage="$(basename "$0") -- Sets up proper version of Redis for this environment and starts redis-server
