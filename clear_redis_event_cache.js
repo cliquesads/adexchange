@@ -1,7 +1,7 @@
 /**
  * Created by bliang on 6/6/15.
  */
-var node_utils = require('cliques_node_utils');
+var node_utils = require('@cliques/cliques-node-utils');
 var transports = node_utils.transports;
 var bigQueryUtils = node_utils.google.bigQueryUtils;
 var googleAuth = node_utils.google.auth;

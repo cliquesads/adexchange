@@ -1,7 +1,7 @@
 //first-party packages
 var br = require('./lib/bid_requests');
 var DefaultConditionHandler = require('./lib/default_conditions').DefaultConditionHandler;
-var node_utils = require('cliques_node_utils');
+var node_utils = require('@cliques/cliques-node-utils');
 var urls = node_utils.urls;
 var logger = require('./lib/logger');
 var tags = node_utils.tags;

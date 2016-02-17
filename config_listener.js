@@ -11,8 +11,8 @@
 
 var pm2 = require('pm2');
 var pmx = require('pmx');
-var sendDataToProcessName = require('cliques_node_utils').pm2utils.sendDataToProcessName;
-var pubsub = require('cliques_node_utils').google.pubsub;
+var sendDataToProcessName = require('@cliques/cliques-node-utils').pm2utils.sendDataToProcessName;
+var pubsub = require('@cliques/cliques-node-utils').google.pubsub;
 var PROCESSNAME = process.env.NODE_ENV === 'production' ? 'adexchange' : 'adexchange_' + process.env.NODE_ENV;
 
 /*  ------------------- PubSub Init & Subscription Hooks------------------- */
