@@ -125,6 +125,7 @@ app.get(urls.PUB_PATH, function(request, response){
     // parse using PubURL object in case you ever want to add additional
     // query params, encoding, parsing, etc.
     var secure = (request.protocol == 'https');
+    var parent_tag_type = request.query.type || 'iframe'; // will be 'javascript' when called using JavaScript pub tag
     var external_port = secure ? HTTPS_EXTERNAL_PORT : HTTP_EXTERNAL_PORT;
     var pubURL = new urls.PubURL(HTTP_HOSTNAME, HTTPS_HOSTNAME, external_port);
     pubURL.parse(request.query, secure);
@@ -138,7 +139,7 @@ app.get(urls.PUB_PATH, function(request, response){
             auctioneer.main(placement, request, response, function(err, winning_bid, bid_request){
                 if (err) {
                     // handle default condition if error
-                    defaultConditionHandler.main(bid_request, placement, secure, function(err, markup){
+                    defaultConditionHandler.main(bid_request, placement, secure, parent_tag_type, function(err, markup){
                         if (err){
                             response.status(404).send("ERROR 404: Cannot get default creative");
                             logger.error('ERROR retrieving markup for default condition: ' + err);
