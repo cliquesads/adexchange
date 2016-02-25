@@ -139,10 +139,11 @@ app.get(urls.PUB_PATH, function(request, response){
             auctioneer.main(placement, request, response, function(err, winning_bid, bid_request){
                 if (err) {
                     // handle default condition if error
-                    defaultConditionHandler.main(bid_request, placement, secure, parent_tag_type, function(err, markup){
+                    defaultConditionHandler.main(bid_request, placement, secure, parent_tag_type, function(err, markup, defaultType){
                         if (err){
-                            response.status(404).send("ERROR 404: Cannot get default creative");
-                            logger.error('ERROR retrieving markup for default condition: ' + err);
+                            response.status(404).send("ERROR 404: Cannot get default condition markup");
+                            //logger.error('ERROR retrieving markup for default condition: ' + err);
+                            logger.auction_default(err, placement, defaultType, request, bid_request);
                         }
                         response.send(markup);
                     });

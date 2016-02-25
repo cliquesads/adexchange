@@ -32,6 +32,26 @@
         ]
       }
     },
+    "AUCTION-DEFAULT": {
+      "tableId": "auction_defaults",
+      "datasetId": "ad_events_dev",
+      "schema": {
+        "fields": [
+          {"name": "hostname", "type": "STRING"},
+          {"name": "level","type": "STRING"},
+          {"name": "msg","type": "STRING"},
+          {"name": "tstamp","type": "TIMESTAMP"},
+          {"name": "uuid","type": "STRING"},
+          {"name": "auctionId","type": "STRING"},
+          {"name": "defaultType","type": "STRING"},
+          {"name": "placement", "type": "STRING"},
+          {"name": "page", "type": "STRING"},
+          {"name": "site", "type": "STRING"},
+          {"name": "publisher", "type": "STRING"},
+          {"name": "pub_clique", "type": "STRING"}
+        ]
+      }
+    },
     "WIN-NOTICE": {
       "tableId": "win_notices",
       "datasetId": "ad_events_dev",
