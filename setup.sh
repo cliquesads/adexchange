@@ -47,7 +47,7 @@ npm update
 # TODO: unnecessarily
 npm install pm2@$PM2_VERSION -g
 # update in-memory pm2 version
-pm2 update
+pm2 updatePM2
 npm install mocha@$MOCHA_VERSION -g
 
 exit 0
