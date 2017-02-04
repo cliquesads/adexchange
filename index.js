@@ -151,7 +151,7 @@ app.get(urls.PUB_PATH, function(request, response){
                     // find a better way now
                     var adm = secure ? horribleHttpsAdMarkupHack(winning_bid.adm) : winning_bid.adm;
                     var markup = urls.expandURLMacros(adm, {
-                        impid: winning_bid.impid, pid: pubURL.pid, ref: request.get('Referrer')
+                        impid: winning_bid.impid, pid: pubURL.pid, ref: encodeURI(request.get('Referrer'))
                     });
                     response.send(markup);
                 }
