@@ -150,7 +150,9 @@ app.get(urls.PUB_PATH, function(request, response){
                     //TODO: this is pretty hacky and makes me uncomfortable but I just don't have time to
                     // find a better way now
                     var adm = secure ? horribleHttpsAdMarkupHack(winning_bid.adm) : winning_bid.adm;
-                    var markup = urls.expandURLMacros(adm, { impid: winning_bid.impid, pid: pubURL.pid });
+                    var markup = urls.expandURLMacros(adm, {
+                        impid: winning_bid.impid, pid: pubURL.pid, ref: encodeURIComponent(request.get('Referrer'))
+                    });
                     response.send(markup);
                 }
                 logger.httpResponse(response);
