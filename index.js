@@ -167,11 +167,12 @@ app.get(urls.PUB_PATH, function(request, response){
 /**
  * RTB Test page, just a placeholder
  */
+var TEST_PLACEMENT = "59162c33a2a66102be6e2001";
 app.get('/rtb_test', function(request, response){
     // fake the referer address just for show in the request data object
     request.headers.referer = 'http://' + request.headers['host'] + request.originalUrl;
     // generate request data again just for show
-    request.query = {"pid": "55d66175a9f9bf9d040232fc"};
+    request.query = {"pid": TEST_PLACEMENT};
     var qs = querystring.encode(request.query);
     publisherModels.getNestedObjectById(request.query.pid,'Placement', function(err, placement) {
         if (err) logger.error(err);
