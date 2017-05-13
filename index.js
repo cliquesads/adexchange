@@ -200,7 +200,7 @@ app.get('/test_ad', function(request, response){
         cloaderURL: cloaderURL
     });
 
-    publisherModels.getNestedObjectById('55d66148afba0f9504bc5a86','Placement', function(err, placement) {
+    publisherModels.getNestedObjectById(TEST_PLACEMENT,'Placement', function(err, placement) {
         if (err) console.log(err);
         var rendered = pubTag.render(placement);
         var fn = jade.compileFile('./templates/test_ad.jade', null);
