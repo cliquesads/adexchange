@@ -196,7 +196,7 @@ app.get('/test_ad', function(request, response){
     var pubTag = new tags.PubTag(hostname, {
         port: external_port,
         secure: secure,
-        tag_type: 'iframe',
+        tag_type: 'javascript',
         cloaderURL: cloaderURL
     });
 
