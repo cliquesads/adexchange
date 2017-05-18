@@ -4,6 +4,7 @@ var DefaultConditionHandler = require('./lib/default_conditions').DefaultConditi
 var node_utils = require('@cliques/cliques-node-utils');
 var urls = node_utils.urls;
 var logger = require('./lib/logger');
+var markupGenerator = require('./lib/markup_generator');
 var tags = node_utils.tags;
 var connections = require('./lib/connections');
 var EXCHANGE_CONNECTION = connections.EXCHANGE_CONNECTION;
@@ -91,18 +92,6 @@ app.get('/', function(request, response) {
     response.send('Welcome to the Cliques Ad Exchange');
 });
 
-/**
- * It's too complicated now to figure out how to toggle creative markup
- * for http/https in the bidder, so this is a horrible hack to do it before
- * rendering the ad tag instead.  Basically just replacing non-secure for
- * secure adserver host in ad markup returned from bidder.
- * @param adm
- */
-var horribleHttpsAdMarkupHack = function(adm){
-    var httpAdserverUrl = 'http://' + adserver_hostname;
-    var httpsAdserverUrl = 'https://' + adserver_secure_hostname;
-    return adm.replace(httpAdserverUrl, httpsAdserverUrl);
-};
 
 /**
  * Main endpoint to handle incoming impression requests & respond with winning ad markup.
@@ -130,13 +119,16 @@ app.get(urls.PUB_PATH, function(request, response){
     var pubURL = new urls.PubURL(HTTP_HOSTNAME, HTTPS_HOSTNAME, external_port);
     pubURL.parse(request.query, secure);
 
+    // set 'form-factor' (currently only used by native placements) to "desktop" as default if not passed through.
+    pubURL['form-factor'] = pubURL['form-factor'] || 'desktop';
+
     publisherModels.getNestedObjectById(pubURL.pid,'Placement', ['sites.pages.clique','sites.clique'], function(err, placement){
         if (err) {
             // Fail if placement can't even be looked up.
             response.status(404).send("ERROR 404: Placement ID " + pubURL.pid + " not found.");
             logger.error("GET Request send to /pub with invalid placement_id: " + pubURL.pid);
         } else {
-            auctioneer.main(placement, request, response, function(err, winning_bid, bid_request){
+            auctioneer.main(placement, request, response, pubURL, function(err, winning_bid, bid_request){
                 if (err) {
                     // handle default condition if error
                     defaultConditionHandler.main(bid_request, placement, secure, parent_tag_type, function(err, markup, defaultType){
@@ -147,12 +139,7 @@ app.get(urls.PUB_PATH, function(request, response){
                         logger.auction_default(err, placement, defaultType, request, bid_request);
                     });
                 } else {
-                    //TODO: this is pretty hacky and makes me uncomfortable but I just don't have time to
-                    // find a better way now
-                    var adm = secure ? horribleHttpsAdMarkupHack(winning_bid.adm) : winning_bid.adm;
-                    var markup = urls.expandURLMacros(adm, {
-                        impid: winning_bid.impid, pid: pubURL.pid, ref: encodeURIComponent(request.get('Referrer'))
-                    });
+                    var markup = markupGenerator.getMarkup(request, placement, winning_bid, pubURL);
                     response.send(markup);
                 }
                 logger.httpResponse(response);
