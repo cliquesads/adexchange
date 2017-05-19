@@ -139,7 +139,7 @@ app.get(urls.PUB_PATH, function(request, response){
                         logger.auction_default(err, placement, defaultType, request, bid_request);
                     });
                 } else {
-                    var markup = markupGenerator.getMarkup(request, placement, winning_bid, pubURL);
+                    var markup = markupGenerator.getMarkup(request, placement, secure, winning_bid, pubURL);
                     response.send(markup);
                 }
                 logger.httpResponse(response);
