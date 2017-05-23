@@ -131,7 +131,7 @@ app.get(urls.PUB_PATH, function(request, response){
             auctioneer.main(placement, request, response, pubURL, function(err, winning_bid, bid_request){
                 if (err) {
                     // handle default condition if error
-                    defaultConditionHandler.main(bid_request, placement, secure, parent_tag_type, function(err, markup, defaultType){
+                    defaultConditionHandler.main(bid_request, err, placement, secure, parent_tag_type, pubURL, function(err, markup, defaultType){
                         if (err){
                             response.status(404).send("ERROR 404: Cannot get default condition markup");
                         }
