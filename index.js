@@ -187,12 +187,16 @@ app.get('/test_ad', function(request, response){
         cloaderURL: cloaderURL
     });
 
-    publisherModels.getNestedObjectById(TEST_PLACEMENT,'Placement', function(err, placement) {
+    publisherModels.getNestedObjectById(TEST_PLACEMENT,'Placement', function(err, placement1) {
         if (err) console.log(err);
-        var rendered = pubTag.render(placement);
-        var fn = jade.compileFile('./templates/test_ad.jade', null);
-        var html = fn({ pubtag: rendered });
-        response.send(html);
+        var rendered1 = pubTag.render(placement1);
+        publisherModels.getNestedObjectById('59162c33a2a66102be6e2001', 'Placement', function(err, placement2){
+            if (err) console.log(err);
+            var fn = jade.compileFile('./templates/test_ad.jade', null);
+            var rendered2 = pubTag.render(placement2);
+            var html = fn({ pubtag1: rendered1, pubtag2: rendered2 });
+            response.send(html);
+        });
     });
 });
 
