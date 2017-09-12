@@ -2,7 +2,7 @@
   "event_tables":{
     "AUCTION": {
       "tableId": "auctions",
-      "datasetId": "ad_events",
+      "datasetId": "smartertravel_ad_events",
       "schema": {
         "fields": [
           {"name": "hostname", "type": "STRING"},
@@ -34,7 +34,7 @@
     },
     "AUCTION-DEFAULT": {
       "tableId": "auction_defaults",
-      "datasetId": "ad_events",
+      "datasetId": "smartertravel_ad_events",
       "schema": {
         "fields": [
           {"name": "hostname", "type": "STRING"},
@@ -54,7 +54,7 @@
     },
     "WIN-NOTICE": {
       "tableId": "win_notices",
-      "datasetId": "ad_events",
+      "datasetId": "smartertravel_ad_events",
       "schema": {
         "fields": [
           {"name": "hostname", "type": "STRING"},
@@ -68,7 +68,7 @@
     },
     "BID-RESPONSE": {
       "tableId": "bid_responses",
-      "datasetId": "ad_events",
+      "datasetId": "smartertravel_ad_events",
       "schema": {
         "fields": [
           {"name": "hostname", "type": "STRING"},
