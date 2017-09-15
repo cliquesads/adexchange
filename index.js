@@ -154,7 +154,7 @@ app.get(urls.PUB_PATH, function(request, response){
 /**
  * RTB Test page, just a placeholder
  */
-var TEST_PLACEMENT = "59162c33a2a66102be6e2001";
+var TEST_PLACEMENT = "59bb4eb05bc03d5c1a239f8b";
 app.get('/rtb_test', function(request, response){
     // fake the referer address just for show in the request data object
     request.headers.referer = 'http://' + request.headers['host'] + request.originalUrl;
