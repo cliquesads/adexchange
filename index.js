@@ -190,7 +190,7 @@ app.get('/test_ad', function(request, response){
     publisherModels.getNestedObjectById(TEST_PLACEMENT,'Placement', function(err, placement1) {
         if (err) console.log(err);
         var rendered1 = pubTag.render(placement1);
-        publisherModels.getNestedObjectById('54f8df2e6bcc85d9653becfb', 'Placement', function(err, placement2){
+        publisherModels.getNestedObjectById('59bb4eb05bc03d5c1a239f8b', 'Placement', function(err, placement2){
             if (err) console.log(err);
             var fn = jade.compileFile('./templates/test_ad.jade', null);
             var rendered2 = pubTag.render(placement2);
