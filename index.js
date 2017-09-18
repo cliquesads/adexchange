@@ -1,5 +1,5 @@
 //first-party packages
-var br = require('./lib/bid_requests');
+var br = require('./lib/auctioneer');
 var DefaultConditionHandler = require('./lib/default_conditions').DefaultConditionHandler;
 var node_utils = require('@cliques/cliques-node-utils');
 var urls = node_utils.urls;
@@ -163,7 +163,7 @@ app.get('/rtb_test', function(request, response){
     var qs = querystring.encode(request.query);
     publisherModels.getNestedObjectById(request.query.pid,'Placement', function(err, placement) {
         if (err) logger.error(err);
-        auctioneer._create_single_imp_bid_request(placement, request, function (err, request_data) {
+        auctioneer._create_bid_request(placement, request, function (err, request_data) {
             var fn = jade.compileFile('./templates/rtb_test.jade', null);
             var html = fn({request_data: JSON.stringify(request_data, null, 2), qs: qs});
             response.send(html);

@@ -58,7 +58,7 @@ describe('WebServer', function(){
     });
 });
 
-describe('Auctioneer', function(){
+describe('_Auctioneer', function(){
 
     //var bidders = config.get('Exchange.bidders');
     var timeout = config.get('Exchange.bidder_timeout');
