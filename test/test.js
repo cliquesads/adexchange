@@ -1,5 +1,5 @@
 var assert = require("assert");
-var br = require('../lib/bid_requests');
+var br = require('../lib/auctioneer');
 var supertest = require('supertest');
 var config = require('config');
 var mongoose = require('mongoose');
@@ -58,7 +58,7 @@ describe('WebServer', function(){
     });
 });
 
-describe('_Auctioneer', function(){
+describe('Auctioneer', function(){
 
     //var bidders = config.get('Exchange.bidders');
     var timeout = config.get('Exchange.bidder_timeout');
