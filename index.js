@@ -45,7 +45,7 @@ function updateAuctioneer(){
     cliquesModels.getAllBidders(function(err, res){
         if (err) return logger.error('ERROR retrieving bidders from Mongo: ' + err);
         bidders = res;
-        auctioneer = new br.BottomUpAuctioneer(bidders,bidder_timeout,logger);
+        auctioneer = new br.Auctioneer(bidders,bidder_timeout,logger);
         logger.info('Got new bidder config, updated Auctioneer: ' + JSON.stringify(bidders));
     });
 }
@@ -143,7 +143,11 @@ app.get(urls.PUB_PATH, function(request, response){
                     response.send(markup);
                 }
                 logger.httpResponse(response);
+                // for (var imp in winning_bid){
+                //     if (winning_bid.hasOwnProperty(imp)){
                 logger.auction(err, placement, request, response, winning_bid, bid_request);
+                //     }
+                // }
             });
         }
     });
