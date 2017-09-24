@@ -1,5 +1,6 @@
 var assert = require("assert");
 var br = require('../lib/auctioneer');
+var connections = require('../lib/connections');
 var supertest = require('supertest');
 var config = require('config');
 var mongoose = require('mongoose');
@@ -13,7 +14,7 @@ var logger = require('../lib/logger');
 
 describe('MongoDB', function(){
     it('Can connect to database: exchange', function(done){
-        var db = mongoose.createConnection(index.exchangeMongoURI, index.exchangeMongoOptions);
+        var db = mongoose.createConnection(connections.exchangeMongoURI, connections.exchangeMongoOptions);
         db.on('connected', function(){
             done();
         });
@@ -22,7 +23,7 @@ describe('MongoDB', function(){
         })
     });
     it('Can connect to database: user', function(done){
-        var db = mongoose.createConnection(index.userMongoURI, index.userMongoOptions);
+        var db = mongoose.createConnection(connections.userMongoURI, connections.userMongoOptions);
         db.on('connected', function(){
             done();
         });
@@ -42,8 +43,7 @@ describe('Config', function(){
 describe('WebServer', function(){
     //UUID value on incoming request gets propagated to request object for downstream processing
     //var req = {cookies: {uuid: "cc820770-c1e6-11e4-b7ba-e977f4853d86"}};
-    var index = require('../index');
-    var app = index.app;
+    var app = require('../index').app;
     describe('GET /', function() {
         it("Responds with 200", function (done) {
             supertest(app)

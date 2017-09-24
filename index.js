@@ -173,10 +173,4 @@ app.get('/test_ad', function(request, response){
 });
 
 /* ------------------- EXPORTS mostly just for unittesting ------------------- */
-
 exports.app = app;
-exports.exchangeMongoURI = connections.exchangeMongoURI;
-exports.exchangeMongoOptions = connections.exchangeMongoOptions;
-exports.userMongoURI = connections.userMongoURI;
-exports.userMongoOptions = connections.userMongoOptions;
-exports.devNullLogger = logger.devNullLogger;
