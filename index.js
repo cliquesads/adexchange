@@ -39,6 +39,7 @@ var HTTPS_EXTERNAL_PORT = config.get('Exchange.https.external.port');
 var bidder_timeout = config.get('Exchange.bidder_timeout');
 var bidders;
 var auctioneer;
+var auctionController;
 
 // Refresh bidder config every n milliseconds automatically
 function updateAuctioneer(){
@@ -46,6 +47,7 @@ function updateAuctioneer(){
         if (err) return logger.error('ERROR retrieving bidders from Mongo: ' + err);
         bidders = res;
         auctioneer = new br.Auctioneer(bidders,bidder_timeout,logger);
+        auctionController = require('./lib/auction.controller')(logger, publisherModels, auctioneer, defaultConditionHandler, markupGenerator);
         logger.info('Got new bidder config, updated Auctioneer: ' + JSON.stringify(bidders));
     });
 }
@@ -65,6 +67,7 @@ function updateDefaultHandler(){
     cliquesModels.getAllDefaultAdvertisers(function(err, defaultAdvertisers){
         if (err) return logger.error('ERROR retrieving default advertiser config from Mongo: ' + err);
         defaultConditionHandler = new DefaultConditionHandler(defaultAdvertisers, adserver_hostname, adserver_secure_hostname, adserver_port);
+        auctionController = require('./lib/auction.controller')(logger, publisherModels, auctioneer, defaultConditionHandler, markupGenerator);
         logger.info('Got new default advertiser config, updated defaultConditionHandler');
     });
 }
@@ -95,14 +98,7 @@ app.get('/', function(request, response) {
 
 /**
  * Main endpoint to handle incoming impression requests & respond with winning ad markup.
- * Does the following, in order:
- * 1) Logs incoming request
- * 2) Retrieves bids via HTTP POST requests using OpenRTB 2.3 bid request object
- * 3) Runs 2nd-price Vickrey auction based on bid-responses
- * 4) Returns winning ad markup in HTTP JSON response
- * 5) Logs response w/ winning bid metadata
- * 6) Sends win-notice via HTTP GET to winning bidder
-*/
+ */
 app.get(urls.PUB_PATH, function(request, response){
     // first check if incoming request has necessary query params
     if (!request.query.hasOwnProperty('pid')){
@@ -122,35 +118,7 @@ app.get(urls.PUB_PATH, function(request, response){
     // set 'form-factor' (currently only used by native placements) to "desktop" as default if not passed through.
     pubURL['form-factor'] = pubURL['form-factor'] || 'desktop';
 
-    publisherModels.getNestedObjectById(pubURL.pid,'Placement', ['sites.pages.clique','sites.clique'], function(err, placement){
-        if (err) {
-            // Fail if placement can't even be looked up.
-            response.status(404).send("ERROR 404: Placement ID " + pubURL.pid + " not found.");
-            logger.error("GET Request send to /pub with invalid placement_id: " + pubURL.pid);
-        } else {
-            auctioneer.main(placement, request, response, pubURL, function(err, winning_bid, bid_request){
-                if (err) {
-                    // handle default condition if error
-                    defaultConditionHandler.main(bid_request, err, placement, secure, parent_tag_type, pubURL, function(err, markup, defaultType){
-                        if (err){
-                            response.status(404).send("ERROR 404: Cannot get default condition markup");
-                        }
-                        response.send(markup);
-                        logger.auction_default(err, placement, defaultType, request, bid_request);
-                    });
-                } else {
-                    var markup = markupGenerator.getMarkup(request, placement, secure, winning_bid, pubURL);
-                    response.send(markup);
-                }
-                logger.httpResponse(response);
-                // for (var imp in winning_bid){
-                //     if (winning_bid.hasOwnProperty(imp)){
-                logger.auction(err, placement, request, response, winning_bid, bid_request);
-                //     }
-                // }
-            });
-        }
-    });
+    auctionController.main(pubURL, request, response);
 });
 
 /* ----------------------- TEST PAGES ---------------------- */
