@@ -38,7 +38,7 @@ var bidder_timeout = config.get('Exchange.bidder_timeout');
 var bidders;
 var auctioneer;
 var auctionController;
-var testController = require('./test/test.controller')(publisherModels);
+var testController;
 
 // Refresh bidder config every n milliseconds automatically
 function updateAuctioneer(){
@@ -47,6 +47,7 @@ function updateAuctioneer(){
         bidders = res;
         auctioneer = new br.Auctioneer(bidders,bidder_timeout,logger);
         auctionController = require('./lib/auction.controller')(logger, publisherModels, auctioneer, defaultConditionHandler, markupGenerator);
+        testController = require('./test/test.controller')(publisherModels, auctioneer);
         logger.info('Got new bidder config, updated Auctioneer: ' + JSON.stringify(bidders));
     });
 }
@@ -117,7 +118,7 @@ app.get(urls.PUB_PATH, function(request, response){
     // set 'form-factor' (currently only used by native placements) to "desktop" as default if not passed through.
     pubURL['form-factor'] = pubURL['form-factor'] || 'desktop';
 
-    auctionController.main(pubURL, request, response);
+    auctionController.main(pubURL, parent_tag_type, secure, request, response);
 });
 
 /* ----------------------- TEST PAGES ---------------------- */

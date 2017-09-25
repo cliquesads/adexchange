@@ -9,7 +9,7 @@ module.exports = function(publisherModels, auctioneer){
             // fake the referer address just for show in the request data object
             request.headers.referer = 'http://' + request.headers['host'] + request.originalUrl;
             // generate request data again just for show
-            var pid = TEST_PLACEMENT.display.id;
+            var pid = TEST_PLACEMENTS.display.id;
             request.query = {"pid": pid };
             var qs = querystring.encode(request.query);
             publisherModels.getNestedObjectById(request.query.pid, 'Placement', function (err, placement) {
