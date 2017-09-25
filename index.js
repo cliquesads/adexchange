@@ -15,8 +15,6 @@ var express = require('./lib/express');
 var app = express(USER_CONNECTION);
 
 //Other third party packages
-var querystring = require('querystring');
-var jade = require('jade');
 var path = require('path');
 var config = require('config');
 
@@ -40,6 +38,7 @@ var bidder_timeout = config.get('Exchange.bidder_timeout');
 var bidders;
 var auctioneer;
 var auctionController;
+var testController = require('./test/test.controller')(publisherModels);
 
 // Refresh bidder config every n milliseconds automatically
 function updateAuctioneer(){
@@ -126,28 +125,15 @@ app.get(urls.PUB_PATH, function(request, response){
 /**
  * RTB Test page, just a placeholder
  */
-var TEST_PLACEMENT = "59bb4eb05bc03d5c1a239f8b";
 app.get('/rtb_test', function(request, response){
-    // fake the referer address just for show in the request data object
-    request.headers.referer = 'http://' + request.headers['host'] + request.originalUrl;
-    // generate request data again just for show
-    request.query = {"pid": TEST_PLACEMENT};
-    var qs = querystring.encode(request.query);
-    publisherModels.getNestedObjectById(request.query.pid,'Placement', function(err, placement) {
-        if (err) logger.error(err);
-        auctioneer._create_bid_request(placement, request, function (err, request_data) {
-            var fn = jade.compileFile('./templates/rtb_test.jade', null);
-            var html = fn({request_data: JSON.stringify(request_data, null, 2), qs: qs});
-            response.send(html);
-        });
-    });
+    testController.rtb_test(request, response);
 });
 
 /**
- * RTB Test page, just a placeholder
+ * Test ad just loads the test ad template, not the full JSON of
+ * impression request, etc.
  */
 app.get('/test_ad', function(request, response){
-
     var secure = request.protocol === 'https';
     var hostname = secure ? HTTPS_HOSTNAME : HTTP_HOSTNAME;
     var external_port = secure ? HTTPS_EXTERNAL_PORT : HTTP_EXTERNAL_PORT;
@@ -158,18 +144,7 @@ app.get('/test_ad', function(request, response){
         tag_type: 'javascript',
         cloaderURL: cloaderURL
     });
-
-    publisherModels.getNestedObjectById(TEST_PLACEMENT,'Placement', function(err, placement1) {
-        if (err) console.log(err);
-        var rendered1 = pubTag.render(placement1);
-        publisherModels.getNestedObjectById('59bb4eb05bc03d5c1a239f8b', 'Placement', function(err, placement2){
-            if (err) console.log(err);
-            var fn = jade.compileFile('./templates/test_ad.jade', null);
-            var rendered2 = pubTag.render(placement2);
-            var html = fn({ pubtag1: rendered1, pubtag2: rendered2 });
-            response.send(html);
-        });
-    });
+    testController.test_ad(pubTag, request, response);
 });
 
 /* ------------------- EXPORTS mostly just for unittesting ------------------- */
