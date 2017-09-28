@@ -29,7 +29,7 @@ module.exports = function(publisherModels, auctioneer){
                     if (err) console.log(err);
                     var fn = jade.compileFile('./templates/test_ad.jade', null);
                     var rendered2 = pubTag.render(placement2);
-                    var html = fn({pubtag1: rendered1, pubtag2: rendered2});
+                    var html = fn({pubtag1: rendered1, pubtag2: rendered2, pid1: placement1.id, pid2: placement2.id });
                     response.send(html);
                 });
             });
