@@ -22,17 +22,17 @@ module.exports = function(publisherModels, auctioneer){
             });
         },
         test_ad: function (pubTag, request, response) {
-            publisherModels.getNestedObjectById(TEST_PLACEMENTS.native.id, 'Placement', function (err, placement1) {
-                if (err) console.log(err);
-                var rendered1 = pubTag.render(placement1);
+            // publisherModels.getNestedObjectById(TEST_PLACEMENTS.native.id, 'Placement', function (err, placement1) {
+            //     if (err) console.log(err);
+            //     var rendered1 = pubTag.render(placement1);
                 publisherModels.getNestedObjectById(TEST_PLACEMENTS.multiUnitNative.id, 'Placement', function (err, placement2) {
                     if (err) console.log(err);
                     var fn = jade.compileFile('./templates/test_ad.jade', null);
                     var rendered2 = pubTag.render(placement2);
-                    var html = fn({pubtag1: rendered1, pubtag2: rendered2, pid1: placement1.id, pid2: placement2.id });
+                    var html = fn({pubtag2: rendered2, pid2: placement2.id });
                     response.send(html);
                 });
-            });
+            // });
         }
     }
 };
