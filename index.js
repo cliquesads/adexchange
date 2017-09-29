@@ -140,8 +140,11 @@ app.get('/test_ad', function(request, response){
     var external_port = secure ? HTTPS_EXTERNAL_PORT : HTTP_EXTERNAL_PORT;
     var cloaderURL = secure ? config.get('Static.CLoader.https') : config.get('Static.CLoader.http');
     var pubTag = new tags.PubTag(hostname, {
+        targetId: "ad2",
+        targetChildIndex: "0",
         port: external_port,
         secure: secure,
+        debug: true,
         tag_type: 'javascript',
         cloaderURL: cloaderURL
     });
