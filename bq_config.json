@@ -28,7 +28,8 @@
           {"name": "region", "type": "STRING"},
           {"name": "city", "type": "STRING"},
           {"name": "zip", "type": "STRING"},
-          {"name": "metro", "type": "STRING"}
+          {"name": "metro", "type": "STRING"},
+          {"name": "keywords", "type": "STRING"}
         ]
       }
     },
