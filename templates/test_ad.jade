@@ -37,7 +37,12 @@ html(lang="en")
             var impIds;
             cloader.on('auctionCompleted',function(err, response) {
                 var MODE = 'view';
-                markups = response.count ? new Array(response.count).fill(false): [];
+                markups = response.count ? new Array(response.count): [];
+                if (response.count) {
+                    for (var i = 0; i < response.count; i ++) {
+                        markups[i] = false;
+                    }
+                }
 
                 var placementElement = document.getElementById('placement');
                 var placementOptions = {
