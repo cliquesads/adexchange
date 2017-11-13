@@ -48,6 +48,8 @@ npm update
 npm install pm2@$PM2_VERSION -g
 # update in-memory pm2 version
 pm2 updatePM2
+# logrotate plugin for PM2
+npm install pm2-logrotate -g
 npm install mocha@$MOCHA_VERSION -g
 
 exit 0
