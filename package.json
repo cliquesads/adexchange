@@ -8,7 +8,7 @@
     "test": "mocha"
   },
   "dependencies": {
-    "@cliques/cliques-node-utils": "^0.5.1",
+    "@cliques/cliques-node-utils": "^0.5.12",
     "async": "^2.5.0",
     "config": "^1.12.0",
     "cookie-parser": "^1.3.4",
@@ -19,8 +19,8 @@
     "mathjs": "^1.3.0",
     "maxmind": "^2.2.0",
     "mobile-detect": "^0.4.3",
-    "mongodb": "~1.4.x",
-    "mongoose": "^4.0.4",
+    "mongodb": "^2.2.19",
+    "mongoose": "^4.7.6",
     "pm2": "^1.0.0",
     "pmx": "^0.3.3",
     "pug": "^2.0.0-rc.4",
