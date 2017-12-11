@@ -27,15 +27,6 @@ while getopts ":p:" opt; do
     e)
       pm2="$OPTARG"
       ;;
-#    \?)
-#      echo "Invalid option: -$OPTARG" >&2
-#      echo "$usage"
-#      exit 1
-#      ;;
-#    :)
-#      echo "Environment flag -$OPTARG requires an argument (either 'dev' or 'production')" >&2
-#      exit 1
-#      ;;
   esac
 done
 
@@ -44,19 +35,10 @@ while getopts ":w:" opt; do
     w)
       winston="$OPTARG"
       ;;
-#    \?)
-#      echo "Invalid option: -$OPTARG" >&2
-#      echo "$usage"
-#      exit 1
-#      ;;
-#    :)
-#      echo "Environment flag -$OPTARG requires an argument (either 'dev' or 'production')" >&2
-#      exit 1
-#      ;;
   esac
 done
 
-source activate_env.sh
+source activate_env.sh -e production
 
 if [ $? -ne 0 ]; then
     exit $?
