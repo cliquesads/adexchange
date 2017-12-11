@@ -22,11 +22,20 @@ pm2=''
 winston=''
 
 # fucking getopts
-while getopts ":pw:" opt; do
+while getopts ":p" opt; do
   case $opt in
     p)
       pm2=$OPTARG
       ;;
+    w)
+      winston=$OPTARG
+      ;;
+  esac
+done
+shift $((OPTIND -1))
+
+while getopts ":w" opt; do
+  case $opt in
     w)
       winston=$OPTARG
       ;;
