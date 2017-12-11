@@ -27,9 +27,6 @@ while getopts ":p" opt; do
     p)
       pm2=$OPTARG
       ;;
-    w)
-      winston=$OPTARG
-      ;;
   esac
 done
 shift $((OPTIND -1))
