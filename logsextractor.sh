@@ -44,6 +44,9 @@ if [ $? -ne 0 ]; then
     exit $?
 fi
 
-node node_modules/@cliques/cliques-node-utils/logsextractor.js -p $pm2 -w $winston
+echo "$pm2"
+echo "$winston"
+
+node node_modules/@cliques/cliques-node-utils/logsextractor.js -p "$pm2" -w "$winston"
 
 exit 0
