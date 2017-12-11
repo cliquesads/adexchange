@@ -24,8 +24,8 @@ winston=''
 # fucking getopts
 while getopts ":p:" opt; do
   case $opt in
-    e)
-      pm2="$OPTARG"
+    p)
+      pm2=$OPTARG
       ;;
   esac
 done
@@ -33,7 +33,7 @@ done
 while getopts ":w:" opt; do
   case $opt in
     w)
-      winston="$OPTARG"
+      winston=$OPTARG
       ;;
   esac
 done
@@ -47,6 +47,6 @@ fi
 echo "$pm2"
 echo "$winston"
 
-node node_modules/@cliques/cliques-node-utils/logsextractor.js -p "$pm2" -w "$winston"
+node node_modules/@cliques/cliques-node-utils/logsextractor.js -p $pm2 -w $winston
 
 exit 0
