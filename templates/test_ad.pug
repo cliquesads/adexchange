@@ -69,22 +69,24 @@ html(lang="en")
 
                 // get winning bids & map to array in order of impid
                 var winningBids = [];
-                impIds = Object.keys(response.debug.winningBid);
-                if (impIds.length > 1){
-                    impIds.sort();
-                }
-                impIds.forEach(function(id){
-                    if (response.debug.winningBid.hasOwnProperty(id)) {
-                        winningBids.push(response.debug.winningBid[id]);
+                if (response.debug.winningBid){
+                    impIds = Object.keys(response.debug.winningBid);
+                    if (impIds.length > 1){
+                        impIds.sort();
                     }
-                });
-                var winningBidElement = document.getElementById('winningBid');
-                var winningBidOptions = {
-                    name: "Winning Bid(s)",
-                    mode: MODE
-                };
-                var winningBidEditor = new JSONEditor(winningBidElement, winningBidOptions);
-                winningBidEditor.set(winningBids);
+                    impIds.forEach(function(id){
+                        if (response.debug.winningBid.hasOwnProperty(id)) {
+                            winningBids.push(response.debug.winningBid[id]);
+                        }
+                    });
+                    var winningBidElement = document.getElementById('winningBid');
+                    var winningBidOptions = {
+                        name: "Winning Bid(s)",
+                        mode: MODE
+                    };
+                    var winningBidEditor = new JSONEditor(winningBidElement, winningBidOptions);
+                    winningBidEditor.set(winningBids);
+                }
             });
 
             cloader.on('adMarkupLoaded', function (err, response) {
