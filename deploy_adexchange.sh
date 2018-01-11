@@ -90,4 +90,8 @@ else
     pm2 reload "$configprocessname"
 fi
 
+# setup logrotate
+pm2 set pm2-logrotate:max_size $LOGROTATE_MAX_SIZE
+pm2 set pm2-logrotate:compress $LOGROTATE_COMPRESS
+
 exit 0

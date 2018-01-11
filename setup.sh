@@ -19,7 +19,7 @@ sudo apt-get install gcc make build-essential
 
 #clone config repo and make symlink
 if [ ! -d $HOME"/repositories/cliques-config" ]; then
-    git clone git@github.com:cliquesads/cliques-config.git ../cliques-config
+    git clone git@github.com:cliquesads/smartertravel-config.git ../cliques-config
     ln -s ../cliques-config config
 else
     cd ../cliques-config
@@ -48,6 +48,8 @@ npm update
 npm install pm2@$PM2_VERSION -g
 # update in-memory pm2 version
 pm2 updatePM2
+# logrotate plugin for PM2
+pm2 install pm2-logrotate
 npm install mocha@$MOCHA_VERSION -g
 
 exit 0
