@@ -1,5 +1,4 @@
 //first-party packages
-var br = require('./lib/auctioneer');
 var DefaultConditionHandler = require('./lib/default_conditions').DefaultConditionHandler;
 var node_utils = require('@cliques/cliques-node-utils');
 var urls = node_utils.urls;
@@ -34,6 +33,9 @@ var HTTPS_EXTERNAL_PORT = config.get('Exchange.https.external.port');
 
 /* --------------------- AUCTIONEER -----------------------*/
 
+var br = require('./lib/auctioneer')(config.get('Exchange.auctionType'));
+
+// First figure out which Auctioneer subclass to instantiate based on config file.
 var bidder_timeout = config.get('Exchange.bidder_timeout');
 var bidders;
 var auctioneer;

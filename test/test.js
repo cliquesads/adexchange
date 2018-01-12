@@ -1,5 +1,4 @@
 var assert = require("assert");
-var br = require('../lib/auctioneer');
 var connections = require('../lib/connections');
 var supertest = require('supertest');
 var config = require('config');
@@ -63,6 +62,7 @@ describe('WebServer', function(){
 describe('Auctioneer', function(){
 
     //var bidders = config.get('Exchange.bidders');
+    var br = require('../lib/auctioneer')("flat");
     var timeout = config.get('Exchange.bidder_timeout');
     var auctioneer = new br.Auctioneer({}, timeout, logger.devNullLogger);
 
@@ -146,7 +146,8 @@ describe('Auctioneer', function(){
 describe('BottomUpAuctioneer', function(){
 
     var timeout = config.get('Exchange.bidder_timeout');
-    var auctioneer = new br.BottomUpAuctioneer({}, timeout, logger.devNullLogger);
+    var br = require('../lib/auctioneer')("bottomUp");
+    var auctioneer = new br.Auctioneer({}, timeout, logger.devNullLogger);
     var test_bids = [
         {
             "id": "7367a940-c526-11e4-9d22-a5269bd04333", "bidid": 2029191609, "cur": "USD", "seatbid": [
