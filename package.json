@@ -1,6 +1,6 @@
 {
   "name": "cliquesadexchange",
-  "version": "0.9.3",
+  "version": "0.9.31",
   "description": "Cliques Ad Exchange",
   "main": "index.js",
   "scripts": {
