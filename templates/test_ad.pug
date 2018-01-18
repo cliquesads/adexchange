@@ -4,7 +4,6 @@ html(lang="en")
         title="Cliques Ad Test"
         link(rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jsoneditor/5.9.6/jsoneditor.min.css")
         script(type='text/javascript' src="https://cdnjs.cloudflare.com/ajax/libs/jsoneditor/5.9.6/jsoneditor.min.js")
-        #{ pubtag2 }
         style(type='text/css').
             body {
                 font-family: 'Avenir',sans-serif;
@@ -32,86 +31,90 @@ html(lang="en")
             .colWrapper {
                 width: 100%
             }
-        script(type='text/javascript').
-            var markups;
-            var impIds;
-            cloader.on('auctionCompleted',function(err, response) {
-                var MODE = 'view';
-                markups = response.count ? new Array(response.count): [];
-                if (response.count) {
-                    for (var i = 0; i < response.count; i ++) {
-                        markups[i] = false;
-                    }
-                }
-
-                var placementElement = document.getElementById('placement');
-                var placementOptions = {
-                    name: "Placement: " + response.debug.placement.name,
-                    mode: MODE
-                };
-                var placementEditor = new JSONEditor(placementElement, placementOptions);
-                var placementData = {
-                    name: response.debug.placement.name,
-                    type: response.debug.placement.type,
-                    active: response.debug.placement.active,
-                    pane: response.pane,
-                    count: response.count,
-                    wrapper: response.wrapper
-                };
-                placementEditor.set(placementData);
-                var bidRequestElement = document.getElementById('bidRequest');
-                var bidRequestOptions = {
-                    name: "Bid Request",
-                    mode: MODE
-                };
-                var bidRequestEditor = new JSONEditor(bidRequestElement, bidRequestOptions);
-                bidRequestEditor.set(response.debug.bidRequest);
-
-                // get winning bids & map to array in order of impid
-                var winningBids = [];
-                if (response.debug.winningBid){
-                    impIds = Object.keys(response.debug.winningBid);
-                    if (impIds.length > 1){
-                        impIds.sort();
-                    }
-                    impIds.forEach(function(id){
-                        if (response.debug.winningBid.hasOwnProperty(id)) {
-                            winningBids.push(response.debug.winningBid[id]);
-                        }
-                    });
-                    var winningBidElement = document.getElementById('winningBid');
-                    var winningBidOptions = {
-                        name: "Winning Bid(s)",
-                        mode: MODE
-                    };
-                    var winningBidEditor = new JSONEditor(winningBidElement, winningBidOptions);
-                    winningBidEditor.set(winningBids);
-                }
-            });
-
-            cloader.on('adMarkupLoaded', function (err, response) {
-                var MODE = 'view';
-                var markupElement = document.getElementById('markup');
-                var markupOptions = {
-                    name: "Winning bid ad markup",
-                    mode: MODE
-                };
-                if (response.index !== null && response.index != undefined){
-                    markups[response.index] = response;
-                    markups[response.index].impid = impIds[response.index];
-                    if (markups.every(function(el){ return el;})){
-                        var markupEditor = new JSONEditor(markupElement, markupOptions);
-                        markupEditor.set(markups);
-                    }
-                } else {
-                    markups[0] = response;
-                    markups[0].impid = impIds[0];
-                    markupEditor = new JSONEditor(markupElement, markupOptions);
-                    markupEditor.set(markups[0]);
-                }
-            });
 
     body
+        #scripts !{ pubtag2 }
+            script(type='text/javascript').
+                var markups;
+                var impIds;
+                cloader.on('auctionCompleted', function (err, response) {
+                    var MODE = 'view';
+                    markups = response.count ? new Array(response.count) : [];
+                    if (response.count) {
+                        for (var i = 0; i < response.count; i++) {
+                            markups[i] = false;
+                        }
+                    }
+
+                    var placementElement = document.getElementById('placement');
+                    var placementOptions = {
+                        name: "Placement: " + response.debug.placement.name,
+                        mode: MODE
+                    };
+                    var placementEditor = new JSONEditor(placementElement, placementOptions);
+                    var placementData = {
+                        name: response.debug.placement.name,
+                        type: response.debug.placement.type,
+                        active: response.debug.placement.active,
+                        pane: response.pane,
+                        count: response.count,
+                        wrapper: response.wrapper
+                    };
+                    placementEditor.set(placementData);
+                    var bidRequestElement = document.getElementById('bidRequest');
+                    var bidRequestOptions = {
+                        name: "Bid Request",
+                        mode: MODE
+                    };
+                    var bidRequestEditor = new JSONEditor(bidRequestElement, bidRequestOptions);
+                    bidRequestEditor.set(response.debug.bidRequest);
+
+                    // get winning bids & map to array in order of impid
+                    var winningBids = [];
+                    if (response.debug.winningBid) {
+                        impIds = Object.keys(response.debug.winningBid);
+                        if (impIds.length > 1) {
+                            impIds.sort();
+                        }
+                        impIds.forEach(function (id) {
+                            if (response.debug.winningBid.hasOwnProperty(id)) {
+                                winningBids.push(response.debug.winningBid[id]);
+                            }
+                        });
+                        var winningBidElement = document.getElementById('winningBid');
+                        var winningBidOptions = {
+                            name: "Winning Bid(s)",
+                            mode: MODE
+                        };
+                        var winningBidEditor = new JSONEditor(winningBidElement, winningBidOptions);
+                        winningBidEditor.set(winningBids);
+                    }
+                });
+
+                cloader.on('adMarkupLoaded', function (err, response) {
+                    var MODE = 'view';
+                    var markupElement = document.getElementById('markup');
+                    var markupOptions = {
+                        name: "Winning bid ad markup",
+                        mode: MODE
+                    };
+                    if (response.index !== null && response.index != undefined) {
+                        markups[response.index] = response;
+                        markups[response.index].impid = impIds[response.index];
+                        if (markups.every(function (el) {
+                                return el;
+                            })) {
+                            var markupEditor = new JSONEditor(markupElement, markupOptions);
+                            markupEditor.set(markups);
+                        }
+                    } else {
+                        markups[0] = response;
+                        markups[0].impid = impIds[0];
+                        markupEditor = new JSONEditor(markupElement, markupOptions);
+                        markupEditor.set(markups[0]);
+                    }
+                });
+
         #container
             h1 Cliques Multi-Pane Native Ad - Test Page
             #ad2
