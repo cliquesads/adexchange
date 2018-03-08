@@ -146,6 +146,10 @@ app.get('/test_ad', function(request, response){
         targetChildIndex: "0",
         port: external_port,
         secure: secure,
+        external: {
+            fakeId: "a1b2c3d4",
+            fakerId: "a1b2c3d5"
+        },
         debug: true,
         tag_type: 'javascript',
         cloaderURL: cloaderURL
