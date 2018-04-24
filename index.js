@@ -147,6 +147,7 @@ app.get('/test_ad', function(request, response){
         port: external_port,
         secure: secure,
         useFactory: true,
+        locationId: 60745,
         debug: true,
         tag_type: 'javascript',
         cloaderURL: cloaderURL
