@@ -146,7 +146,8 @@ app.get('/test_ad', function(request, response){
         targetChildIndex: "0",
         port: external_port,
         secure: secure,
-        useFactory: true,
+        useFactory: false,
+        locationId: false,
         debug: true,
         tag_type: 'javascript',
         cloaderURL: cloaderURL
