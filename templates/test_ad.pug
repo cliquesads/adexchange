@@ -48,7 +48,7 @@ html(lang="en")
                 };
                 window.smarter.nativeActive = true;
             script(type='text/javascript').
-                /*@preserve Cliques Ad Loader v0.9.31, built Mon Jul 30 2018 13:37:53 GMT-0400 (EDT) */
+                /*@preserve Cliques Ad Loader v0.9.31, built Wed Aug 01 2018 14:23:15 GMT-0400 (EDT) */
                 var CLoader = CLoader || (function () {
                     var IMAGE_ATTR = 'data-cliquesnative';
                     var CLICK_ATTR = 'data-cliquesnative-click';
@@ -123,9 +123,23 @@ html(lang="en")
                             url += '?' + serializeObject(context.external);
                         }
 
-                        // now add auction data, i.e. fields passed back by exchange containing auction information
-                        if (context.auctionData) {
-                            url += (context.external ? '&' : '?') + serializeObject(context.auctionData);
+                        // now add auction data
+                        // exchange will filter returned object based on auctionDataFields, but as of now this param
+                        // won't get passed to adServer for various, probably-not-that-legit reasons, so for good measure
+                        // will just construct new object with only requested fields from exchangeAuctionData & adserverAuctionData
+                        if (context.auctionDataFields) {
+                            var auctionData = {};
+                            var fields = context.auctionDataFields.split(',');
+                            fields.forEach(function (field) {
+                                // fields in each auctionData object are assumed to be collision-proof,
+                                // since each backend only sets specific parameters for auctionData.
+                                if (context.exchangeAuctionData.hasOwnProperty(field)) {
+                                    auctionData[field] = context.exchangeAuctionData[field];
+                                } else if (context.adserverAuctionData.hasOwnProperty(field)) {
+                                    auctionData[field] = context.adserverAuctionData[field];
+                                }
+                            });
+                            url += (context.external ? '&' : '?') + serializeObject(auctionData);
                         }
 
                         if (context.externalId) {
@@ -563,7 +577,7 @@ html(lang="en")
                     /**
                      * Creates unified context object to pass to template
                      */
-                    _Loader.prototype.getNativeContext = function (placementSpecs, creativeSpecs, auctionData) {
+                    _Loader.prototype.getNativeContext = function (placementSpecs, creativeSpecs, exchangeAuctionData, adserverAuctionData) {
                         var context = creativeSpecs;
                         // enumerate all of the properties of placement specs
                         // and add them to context
@@ -586,7 +600,9 @@ html(lang="en")
                         context.externalId = creativeSpecs.externalId;
 
                         // finally add whatever auction data was passed through
-                        context.auctionData = auctionData;
+                        context.exchangeAuctionData = exchangeAuctionData;
+                        context.auctionDataFields = this.auctionDataFields;
+                        context.adserverAuctionData = adserverAuctionData;
 
                         return context;
                     };
@@ -602,7 +618,8 @@ html(lang="en")
                             var context = self.getNativeContext(
                                 self.native.placementSpecs,
                                 self.native.creativeSpecs,
-                                self.auctionData);
+                                self.exchangeAuctionData,
+                                self.adserverAuctionData);
                             var template = self.native.placementSpecs.template;
 
                             // fixed dimensions passed to loader
@@ -660,7 +677,8 @@ html(lang="en")
                             var context = self.getNativeContext(
                                 self.multiPaneNative.placementSpecs.pane,
                                 self.multiPaneNative.creativeSpecs[index],
-                                self.auctionData[index]);
+                                self.exchangeAuctionData[index],
+                                self.adserverAuctionData[index]);
                             var template = self.multiPaneNative.placementSpecs.pane.template;
 
                             // fixed dimensions passed to loader
@@ -766,7 +784,9 @@ html(lang="en")
                         var xmlHttp = new XMLHttpRequest();
                         xmlHttp.onreadystatechange = function () {
                             if (xmlHttp.readyState == 4 && xmlHttp.status == 200) {
-                                self.native.creativeSpecs = JSON.parse(xmlHttp.responseText);
+                                var parsed = JSON.parse(xmlHttp.responseText);
+                                self.native.creativeSpecs = parsed;
+                                self.adserverAuctionData = parsed.adserverAuctionData;
                                 self._emitEvent('adMarkupLoaded', null, self.native.creativeSpecs);
                                 self.doNativeRender(lazyCallback);
                             } else if (xmlHttp.readyState == 4 && xmlHttp.status != 200) {
@@ -796,7 +816,10 @@ html(lang="en")
                                 }
                                 if (!responseJson.default) {
                                     self.native.placementSpecs = responseJson;
-                                    self.auctionData = responseJson.auctionData;
+
+                                    // store exchangeAuctionData as well
+                                    self.exchangeAuctionData = responseJson.exchangeAuctionData;
+
                                     if (self.native.placementSpecs.test) {
                                         self.native.creativeSpecs = self.native.placementSpecs; // just for testing
                                         self.doNativeRender(lazyCallback);
@@ -875,6 +898,7 @@ html(lang="en")
                         // then loop over ad-server URL's passed back by each winning bid and create Ajax call
                         // for each one.
                         self.multiPaneNative.creativeSpecs = new Array(count);
+                        self.adserverAuctionData = new Array(count);
                         var requests = new Array(count);
                         for (var i = 0; i < self.multiPaneNative.placementSpecs.count; i++) {
                             var adm = self.multiPaneNative.placementSpecs.adms[i];
@@ -883,10 +907,18 @@ html(lang="en")
                             var getCallback = function (index) {
                                 return function () {
                                     if (requests[index].readyState === 4 && requests[index].status === 200) {
-                                        self.multiPaneNative.creativeSpecs[index] = JSON.parse(requests[index].responseText);
+                                        var parsed = JSON.parse(requests[index].responseText);
+
+                                        // add pane's creative specs to creative specs array
+                                        self.multiPaneNative.creativeSpecs[index] = parsed;
                                         self.multiPaneNative.creativeSpecs[index].index = index;
+
+                                        // now add any auctionData passed back by adserver
+                                        self.adserverAuctionData[index] = parsed.adserverAuctionData;
+
                                         // call event hook first
                                         self._emitEvent('adMarkupLoaded', null, self.multiPaneNative.creativeSpecs[index]);
+
                                         // now do the render
                                         self.doMultiPaneNativeRender(index, lazyCallback);
                                     } else if (requests[index].readyState === 4 && requests[index].status !== 200) {
@@ -919,8 +951,10 @@ html(lang="en")
                                 }
                                 if (!responseJson.default) {
                                     self.multiPaneNative.placementSpecs = responseJson;
-                                    // store auctionData as well
-                                    self.auctionData = responseJson.auctionData;
+
+                                    // store exchangeAuctionData as well
+                                    self.exchangeAuctionData = responseJson.exchangeAuctionData;
+
                                     if (!self.multiPaneNative.placementSpecs) {
                                         if (lazyCallback) return lazyCallback(null, null, null);
                                         return;
@@ -1104,7 +1138,7 @@ html(lang="en")
                     targetId: "ad2",
                     targetChildIndex: "0",
                     locationId: null,
-                    auctionDataFields: 'clickid,impid',
+                    auctionDataFields: 'clickid,impid,clearprice,pid,pubid,cid,campid,advid',
                     external: {
                         test: true,
                         source: "cliques"
