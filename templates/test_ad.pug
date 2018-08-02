@@ -48,7 +48,7 @@ html(lang="en")
                 };
                 window.smarter.nativeActive = true;
             script(type='text/javascript').
-                /*@preserve Cliques Ad Loader v0.9.31, built Wed Aug 01 2018 14:23:15 GMT-0400 (EDT) */
+                /*@preserve Cliques Ad Loader v0.9.33, built Thu Aug 02 2018 00:25:01 GMT-0400 (EDT) */
                 var CLoader = CLoader || (function () {
                     var IMAGE_ATTR = 'data-cliquesnative';
                     var CLICK_ATTR = 'data-cliquesnative-click';
@@ -142,8 +142,12 @@ html(lang="en")
                             url += (context.external ? '&' : '?') + serializeObject(auctionData);
                         }
 
-                        if (context.externalId) {
-                            url = [url, [context._clickTracking.externalIdKey, context.externalId].join('=')].join('&');
+                        if (context.creativeExternalId && context._clickTracking.creativeExternalIdKey) {
+                            url = [url, [context._clickTracking.creativeExternalIdKey, context.creativeExternalId].join('=')].join('&');
+                        }
+
+                        if (context.campaignExternalId && context._clickTracking.campaignExternalIdKey) {
+                            url = [url, [context._clickTracking.campaignExternalIdKey, context.campaignExternalId].join('=')].join('&');
                         }
                         return encodeURI(url);
                     };
@@ -597,7 +601,8 @@ html(lang="en")
                         // external subObj
                         context.external = this.external;
                         // set at creative level;
-                        context.externalId = creativeSpecs.externalId;
+                        context.creativeExternalId = creativeSpecs.creativeExternalId;
+                        context.campaignExternalId = creativeSpecs.campaignExternalId;
 
                         // finally add whatever auction data was passed through
                         context.exchangeAuctionData = exchangeAuctionData;
@@ -1048,7 +1053,7 @@ html(lang="en")
                                 // base click URL to hit. Will serialize options.external & append as query params
                                 trackingUrlBase: self._getServiceBaseURL(options, '{"production":"https://r.bookingbuddy.com/t","staging":"https://rstg-origin.bookingbuddy.com"}'),
                                 // query parameter key to map creative.externalId to
-                                externalIdKey: 'ad_id'
+                                campaignExternalIdKey: 'ad_id'
                             };
                             if (!options.external.hasOwnProperty('test')) {
                                 options.external.test = 'true'
