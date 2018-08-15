@@ -1,46 +1,44 @@
 //first-party packages
-var DefaultConditionHandler = require('./lib/default_conditions').DefaultConditionHandler;
-var node_utils = require('@cliques/cliques-node-utils');
-var urls = node_utils.urls;
-var logger = require('./lib/logger');
-var markupGenerator = require('./lib/markup_generator');
-var tags = node_utils.tags;
-var connections = require('./lib/connections');
-var EXCHANGE_CONNECTION = connections.EXCHANGE_CONNECTION;
+const DefaultConditionHandler = require('./lib/default_conditions').DefaultConditionHandler;
+const node_utils = require('@cliques/cliques-node-utils');
+const urls = node_utils.urls;
+const logger = require('./lib/logger');
+const markupGenerator = require('./lib/markup_generator');
+const tags = node_utils.tags;
+const connections = require('./lib/connections');
+const EXCHANGE_CONNECTION = connections.EXCHANGE_CONNECTION;
 
 //Set up Express & create app
-var USER_CONNECTION = connections.USER_CONNECTION;
-var express = require('./lib/express');
-var app = express(USER_CONNECTION);
+const USER_CONNECTION = connections.USER_CONNECTION;
 
 //Other third party packages
-var path = require('path');
-var config = require('config');
+const config = require('config');
 
 /* ------------------------- MODELS ----------------------------- */
 
 // create PublisherModels instance to access Publisher DB models
-var publisherModels = new node_utils.mongodb.models.PublisherModels(EXCHANGE_CONNECTION,{read: 'secondaryPreferred'});
-var cliquesModels = new node_utils.mongodb.models.CliquesModels(EXCHANGE_CONNECTION,{read: 'secondaryPreferred'});
+const publisherModels = new node_utils.mongodb.models.PublisherModels(EXCHANGE_CONNECTION,{read: 'secondaryPreferred'});
+const cliquesModels = new node_utils.mongodb.models.CliquesModels(EXCHANGE_CONNECTION,{read: 'secondaryPreferred'});
+const fraudModels = new node_utils.mongodb.models.FraudModels(EXCHANGE_CONNECTION,{read: 'secondaryPreferred'});
 
 /* ------------------- HOSTNAME VARIABLES ------------------- */
 
-// hostname var is external hostname, not localhost
-var HTTP_HOSTNAME = config.get('Exchange.http.external.hostname');
-var HTTP_EXTERNAL_PORT = config.get('Exchange.http.external.port');
-var HTTPS_HOSTNAME = config.get('Exchange.https.external.hostname');
-var HTTPS_EXTERNAL_PORT = config.get('Exchange.https.external.port');
+// hostname const is external hostname, not localhost
+const HTTP_HOSTNAME = config.get('Exchange.http.external.hostname');
+const HTTP_EXTERNAL_PORT = config.get('Exchange.http.external.port');
+const HTTPS_HOSTNAME = config.get('Exchange.https.external.hostname');
+const HTTPS_EXTERNAL_PORT = config.get('Exchange.https.external.port');
 
 /* --------------------- AUCTIONEER -----------------------*/
 
-var br = require('./lib/auctioneer')(config.get('Exchange.auctionType'));
+const br = require('./lib/auctioneer')(config.get('Exchange.auctionType'));
 
 // First figure out which Auctioneer subclass to instantiate based on config file.
-var bidder_timeout = config.get('Exchange.bidder_timeout');
-var bidders;
-var auctioneer;
-var auctionController;
-var testController;
+const bidder_timeout = config.get('Exchange.bidder_timeout');
+let bidders;
+let auctioneer;
+let auctionController;
+let testController;
 
 // Refresh bidder config every n milliseconds automatically
 function updateAuctioneer(){
@@ -59,12 +57,20 @@ function updateAuctioneer(){
 // for my comfort.
 updateAuctioneer();
 
+/*  ------------------- Express App Init ------------------- */
+
+const express = require('./lib/express');
+const winston = require('winston');
+const REDIS_CONNECTION = winston.transports.GetDefaultRedisClient();
+const fraudDetector = new node_utils.fraudDetection.FraudDetector(EXCHANGE_CONNECTION, REDIS_CONNECTION, logger);
+const app = express(USER_CONNECTION, fraudDetector);
+
 /*  ------------------- DefaultConditionHandler Init ------------------- */
 
-var adserver_hostname = config.get('AdServer.http.external.hostname');
-var adserver_secure_hostname = config.get('AdServer.https.external.hostname');
-var adserver_port = config.get('AdServer.http.external.port');
-var defaultConditionHandler;
+const adserver_hostname = config.get('AdServer.http.external.hostname');
+const adserver_secure_hostname = config.get('AdServer.https.external.hostname');
+const adserver_port = config.get('AdServer.http.external.port');
+let defaultConditionHandler;
 function updateDefaultHandler(){
     cliquesModels.getAllDefaultAdvertisers(function(err, defaultAdvertisers){
         if (err) return logger.error('ERROR retrieving default advertiser config from Mongo: ' + err);
@@ -85,6 +91,20 @@ process.on('message', function(packet) {
             break;
         case 'defaultsConfig':
             updateDefaultHandler();
+            break;
+        case 'ipBlockList':
+            fraudDetector.updateBlockedIPsInRedis().then(res=>{
+                logger.info(`FraudDetector: MongoDB BlockedIP collection successfully stored to redis: ${res}`);
+            }).catch((err) => {
+                logger.error(`FraudDetector ERROR: MongoDB BlockedIP collection not stored to redis: ${err}`);
+            });
+            break;
+        case 'uaBlockList':
+            fraudDetector.updateBlockedUserAgentsInRedis().then(res=>{
+                logger.info(`FraudDetector: MongoDB BlockedUserAgent collection successfully stored to redis: ${res}`);
+            }).catch((err) => {
+                logger.error(`FraudDetector ERROR: MongoDB BlockedUserAgent collection not stored to redis: ${err}`);
+            });
             break;
         default:
             console.log('Sorry, couldn\'t understand this `update` message');
@@ -111,10 +131,10 @@ app.get(urls.PUB_PATH, function(request, response){
 
     // parse using PubURL object in case you ever want to add additional
     // query params, encoding, parsing, etc.
-    var secure = (request.protocol == 'https');
-    var parent_tag_type = request.query.type || 'iframe'; // will be 'javascript' when called using JavaScript pub tag
-    var external_port = secure ? HTTPS_EXTERNAL_PORT : HTTP_EXTERNAL_PORT;
-    var pubURL = new urls.PubURL(HTTP_HOSTNAME, HTTPS_HOSTNAME, external_port);
+    const secure = (request.protocol === 'https');
+    const parent_tag_type = request.query.type || 'iframe'; // will be 'javascript' when called using JavaScript pub tag
+    const external_port = secure ? HTTPS_EXTERNAL_PORT : HTTP_EXTERNAL_PORT;
+    const pubURL = new urls.PubURL(HTTP_HOSTNAME, HTTPS_HOSTNAME, external_port);
     pubURL.parse(request.query, secure);
 
     // set 'form-factor' (currently only used by native placements) to "desktop" as default if not passed through.
@@ -137,11 +157,11 @@ app.get('/rtb_test', function(request, response){
  * impression request, etc.
  */
 app.get('/test_ad', function(request, response){
-    var secure = request.protocol === 'https';
-    var hostname = secure ? HTTPS_HOSTNAME : HTTP_HOSTNAME;
-    var external_port = secure ? HTTPS_EXTERNAL_PORT : HTTP_EXTERNAL_PORT;
-    var cloaderURL = secure ? config.get('Static.CLoader.https') : config.get('Static.CLoader.http');
-    var pubTag = new tags.PubTag(hostname, {
+    const secure = request.protocol === 'https';
+    const hostname = secure ? HTTPS_HOSTNAME : HTTP_HOSTNAME;
+    const external_port = secure ? HTTPS_EXTERNAL_PORT : HTTP_EXTERNAL_PORT;
+    const cloaderURL = secure ? config.get('Static.CLoader.https') : config.get('Static.CLoader.http');
+    const pubTag = new tags.PubTag(hostname, {
         targetId: "ad2",
         targetChildIndex: "0",
         port: external_port,
