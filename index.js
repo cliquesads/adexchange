@@ -19,7 +19,6 @@ const config = require('config');
 // create PublisherModels instance to access Publisher DB models
 const publisherModels = new node_utils.mongodb.models.PublisherModels(EXCHANGE_CONNECTION,{read: 'secondaryPreferred'});
 const cliquesModels = new node_utils.mongodb.models.CliquesModels(EXCHANGE_CONNECTION,{read: 'secondaryPreferred'});
-const fraudModels = new node_utils.mongodb.models.FraudModels(EXCHANGE_CONNECTION,{read: 'secondaryPreferred'});
 
 /* ------------------- HOSTNAME VARIABLES ------------------- */
 

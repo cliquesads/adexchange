@@ -1165,18 +1165,18 @@ html(lang="en")
                 //     aspectLayout: "landscape",
                 //     lazy: true
                 // });
-                cloader.main(function (err, template, context) {
-                    // `renderedTemplate` is the HTML as a string of the populated native ad template.
-                    // `err === null` if ad call & rendering is successful (200), or if ad call results in 204 response, i.e.
-                    // no ad to serve. `err` will only be non-null if a JS error is thrown in rendering process.
-                    //
-                    // If ad-response is empty, i.e. no one bought the impression, then `renderedTemplate` will be null,
-                    // as will `err`.
-                    console.log('entered here');
-                    if (err) {
-                        console.error(err);
-                    }
-                });
+                // cloader.main(function (err, template, context) {
+                //     // `renderedTemplate` is the HTML as a string of the populated native ad template.
+                //     // `err === null` if ad call & rendering is successful (200), or if ad call results in 204 response, i.e.
+                //     // no ad to serve. `err` will only be non-null if a JS error is thrown in rendering process.
+                //     //
+                //     // If ad-response is empty, i.e. no one bought the impression, then `renderedTemplate` will be null,
+                //     // as will `err`.
+                //     console.log('entered here');
+                //     if (err) {
+                //         console.error(err);
+                //     }
+                // });
 
             script(type='text/javascript').
                 var markups;
