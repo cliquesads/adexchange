@@ -80,6 +80,17 @@ pmx.action('updateBidderConfig', function(reply){
     });
 });
 
+pmx.action('updateIPBlockList', function(reply){
+    sendDataToProcessName(PROCESSNAME, { update: "ipBlockList" }, function(err, responses){
+        pmxCallback(reply,err, responses);
+    });
+});
+pmx.action('updateUserAgentBlockList', function(reply){
+    sendDataToProcessName(PROCESSNAME, { update: "uaBlockList" }, function(err, responses){
+        pmxCallback(reply,err, responses);
+    });
+});
+
 pmx.action('updateDefaultsConfig', function(reply){
     sendDataToProcessName(PROCESSNAME, { update: "defaultsConfig" }, function(err, responses){
         pmxCallback(reply,err, responses);
