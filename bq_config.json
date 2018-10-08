@@ -30,6 +30,10 @@
           {"name": "metro", "type": "STRING"},
           {"name": "keywords", "type": "STRING"}
         ]
+      },
+      "timePartitioning": {
+        "type": "DAY",
+        "field": "tstamp"
       }
     },
     "AUCTION-DEFAULT": {
@@ -49,6 +53,10 @@
           {"name": "publisher", "type": "STRING"},
           {"name": "pub_clique", "type": "STRING"}
         ]
+      },
+      "timePartitioning": {
+        "type": "DAY",
+        "field": "tstamp"
       }
     },
     "WIN-NOTICE": {
@@ -62,6 +70,10 @@
           {"name": "nurl","type": "STRING"},
           {"name": "statusCode","type": "INTEGER"}
         ]
+      },
+      "timePartitioning": {
+        "type": "DAY",
+        "field": "tstamp"
       }
     },
     "BID-RESPONSE": {
@@ -77,6 +89,10 @@
           {"name": "statusCode","type": "INTEGER"},
           {"name": "body","type": "STRING"}
         ]
+      },
+      "timePartitioning": {
+        "type": "DAY",
+        "field": "tstamp"
       }
     }
   }
